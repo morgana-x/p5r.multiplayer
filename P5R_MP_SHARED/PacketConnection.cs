@@ -60,7 +60,8 @@ namespace Shared
             List<IPEndPoint> toBeRemoved = new List<IPEndPoint>();
             foreach (var a in endPoints)
             {
-                if (DateTime.Now.Subtract(a.Value).Milliseconds > LocalUdpClient.Client.ReceiveTimeout)
+               // Console.WriteLine("Timeout: " + DateTime.Now.Subtract(a.Value).TotalMilliseconds);
+                if (DateTime.Now.Subtract(a.Value).TotalMilliseconds > LocalUdpClient.Client.ReceiveTimeout)
                 {
                     toBeRemoved.Add(a.Key);
                 }
@@ -70,7 +71,12 @@ namespace Shared
                 DisconnectEndpoint(a);
             }
         }
-
+        private void UpdateTimeout(IPEndPoint clientRemoteEP)
+        {
+            if (!endPoints.ContainsKey(clientRemoteEP))
+                endPoints.Add(clientRemoteEP, DateTime.Now);
+            endPoints[clientRemoteEP] = DateTime.Now;
+        }
 
         private void HandlePacketTrafficServer(int port = 11000)
         {
@@ -80,24 +86,24 @@ namespace Shared
             {
                 while (Running)
                 {
-                    CheckTimeout();
                     IPEndPoint clientRemoteEP = new IPEndPoint(IPAddress.Any, port);
+                    CheckTimeout();
                     try
                     {
                         byte[] data = LocalUdpClient.Receive(ref clientRemoteEP);
+
                         if (!endPoints.ContainsKey(clientRemoteEP))
                         {
                             if (data[0] != 72)
                             {
                                 continue;
                             }
-                            //endPoints.Add(clientRemoteEP);
-                            endPoints.Add(clientRemoteEP, DateTime.Now);
+                            UpdateTimeout(clientRemoteEP);
                             OnClientConnect?.Invoke(this, new ClientConnectArgs(clientRemoteEP));
                         }
                         else
                         {
-                            endPoints[clientRemoteEP] = DateTime.Now;
+                            UpdateTimeout(clientRemoteEP);
                             OnPacketReceived?.Invoke(this, new PacketReceivedArgs(clientRemoteEP, data));
                         }
                     }

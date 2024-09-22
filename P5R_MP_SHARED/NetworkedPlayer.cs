@@ -15,10 +15,13 @@ namespace Shared
 
         public int Model = 0;
 
+        public int Animation = -1;
+
         public bool RefreshPosition;
         public bool RefreshRotation;
         public bool RefreshField;
         public bool RefreshModel;
+        public bool RefreshAnimation;
 
         public IPAddress IpAddress;
 

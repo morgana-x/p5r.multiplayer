@@ -70,6 +70,8 @@ namespace p5r.code.multiplayerclient.Components
 
         int[] lastModel = new int[3] { 1, 1, 0 };
 
+        int lastAnimation = -1;
+
         List<Packet> packetsQueue = new List<Packet>(); 
         private void Tick()
         {
@@ -129,6 +131,16 @@ namespace p5r.code.multiplayerclient.Components
                         BitConverter.GetBytes(newRot[0]),
                         BitConverter.GetBytes(newRot[1]),
                         BitConverter.GetBytes(newRot[2]),
+                    }));
+            }
+            int newAnimation = _npcManager.PC_GET_ANIM(pcHandle);
+            if (newAnimation != lastAnimation)
+            {
+                lastAnimation = newAnimation;
+                Client.Send(Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_ANIMATION, new List<byte[]>()
+                    {
+                        BitConverter.GetBytes(clientPlayerId),
+                        BitConverter.GetBytes(newAnimation),
                     }));
             }
         }
@@ -241,6 +253,13 @@ namespace p5r.code.multiplayerclient.Components
                 int field_minor = BitConverter.ToInt32(packet.Arguments[2]);
                 _npcManager.MP_PLAYER_SET_FIELD(id, new int[] { field_major, field_minor });
                 Console.WriteLine($"{id}'s field set to {string.Join("_", new int[] { field_major, field_minor })}.");
+                return;
+            }
+            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_ANIMATION)
+            {
+                int id = BitConverter.ToInt32(packet.Arguments[0]);
+                int animation = BitConverter.ToInt32(packet.Arguments[1]);
+                _npcManager.MP_SYNC_PLAYER_ANIMATION(id, animation);
                 return;
             }
         }

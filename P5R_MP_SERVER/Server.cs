@@ -173,6 +173,27 @@ namespace P5R_MP_SERVER
                         NetworkPlayer(pl, p);
                     }
                 }
+                if (pl.RefreshAnimation)
+                {
+                    pl.RefreshAnimation = false;
+                    byte[] packet = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_ANIMATION, new List<byte[]> 
+                    {
+                        BitConverter.GetBytes(pl.Id),
+                        BitConverter.GetBytes(pl.Animation)
+                    });
+                    foreach (NetworkedPlayer p in PlayerList)
+                    {
+                        if (p.Id == pl.Id)
+                        {
+                            continue;
+                        }
+                        if (!IsInSameField(p, pl))
+                        {
+                            continue;
+                        }
+                        p.SendBytes(udpServer,packet);
+                    }
+                }
             }
         }
         private void RemovePlayer(NetworkedPlayer player)
@@ -282,6 +303,13 @@ namespace P5R_MP_SERVER
                 player.RefreshModel = true;
                 int[] model = ModelChecker.GetModelFromId(player.Model);
                 Console.WriteLine($"{player.Id}'s model set to {string.Join("_", model)}.");
+                return;
+            }
+            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_ANIMATION)
+            {
+                player.Animation = BitConverter.ToInt32(packet.Arguments[1]);
+                player.RefreshAnimation = true;
+                Console.WriteLine($"{player.Id}'s animation set to {player.Animation}.");
                 return;
             }
         }

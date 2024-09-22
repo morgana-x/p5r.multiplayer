@@ -99,13 +99,18 @@ namespace p5r.code.multiplayerclient.Components
             MP_SPAWN_PLAYER(netId, modelIdMajor, modelIdMinor, modelIdSub);
         }
 
-        public void MP_SYNC_PLAYER_ANIMATION(int netid, int gNpcAnimGapIndex, int gNpcAnimGapMinorId, int gNpcAnimShouldLoop)
+        public void MP_SYNC_PLAYER_ANIMATION(int netid, int animationId, int shouldLoop = -1)// int gNpcAnimGapIndex, int gNpcAnimGapMinorId, int gNpcAnimShouldLoop)
         {
             if (!playerNpcList.ContainsKey(netid) || playerNpcList[netid] == -1)
             {
                 MP_SPAWN_PLAYER(netid);
             }
-            NPC_SET_ANIM(playerNpcList[netid], gNpcAnimGapIndex, gNpcAnimGapMinorId, gNpcAnimShouldLoop);
+            if (shouldLoop == -1)
+            {
+                shouldLoop = 1;
+            }
+            NPC_SET_ANIM(playerNpcList[netid], animationId, shouldLoop);
+            //NPC_SET_ANIM(playerNpcList[netid], gNpcAnimGapIndex, gNpcAnimGapMinorId, gNpcAnimShouldLoop);
         }
         public int[] GET_FIELD()
         {
@@ -146,6 +151,13 @@ namespace p5r.code.multiplayerclient.Components
             if (!_p5rLib.FlowCaller.Ready())
                 return -1;
             return _p5rLib.FlowCaller.FLD_PC_GET_RESHND(0);
+        }
+        public int PC_GET_ANIM(int pcHandle)
+        {
+            if (!_p5rLib.FlowCaller.Ready())
+                return -1;
+            return NPC_GET_ANIM(pcHandle);
+
         }
         static int[] DefaultModel = new int[3] { 1, 1, 0 };
         public int[] PC_GET_MODEL(int pcHandle)
@@ -190,19 +202,30 @@ namespace p5r.code.multiplayerclient.Components
             _p5rLib.FlowCaller.FLD_MODEL_SET_ROTATE(npcHandle, rot[0], rot[1], rot[2], 0);
         }
 
-        public void NPC_SET_ANIM(int npcHandle, int gNpcAnimGapIndex, int gNpcGAPMinorId, int gNpcAnimShouldLoop=0)
+        public void NPC_SET_ANIM(int npcHandle, int animationId, int gNpcAnimShouldLoop = 0)// int npcHandle, int gNpcAnimGapIndex, int gNpcGAPMinorId, int gNpcAnimShouldLoop=0)
         {
             if (!_p5rLib.FlowCaller.Ready())
                 return;
-            int clone = _p5rLib.FlowCaller.FLD_MODEL_CLONE_ADDMOTION(npcHandle, gNpcGAPMinorId);
-            _p5rLib.FlowCaller.FLD_UNIT_WAIT_DISABLE(clone);
-            _p5rLib.FlowCaller.MDL_ANIM(npcHandle, gNpcAnimGapIndex, gNpcAnimShouldLoop, 0, 1);
+            if (animationId == -1)
+                return;
+            if (npcHandle == -1)
+                return;
+            if (animationId < 0)
+                animationId = 0;
+            
+            // int clone = _p5rLib.FlowCaller.FLD_MODEL_CLONE_ADDMOTION(npcHandle, gNpcGAPMinorId);
+            //  _p5rLib.FlowCaller.FLD_UNIT_WAIT_DISABLE(clone);
+            if (animationId == 58)
+                animationId = 0;
+            _p5rLib.FlowCaller.MDL_ANIM(npcHandle, animationId, gNpcAnimShouldLoop, 0, 1);
             /*WAIT(gNpcAnimTime);
             //FLD_MODEL_REVERT_ADDMOTION(lastSpawnedNpcModelHandle, clone);*/
 
         }
         public int NPC_GET_ANIM(int npcHandle)
         {
+            if (!_p5rLib.FlowCaller.Ready())
+                return -1;
             int anim = _p5rLib.FlowCaller.MDL_GET_ANIM(npcHandle);
             return anim;
         }

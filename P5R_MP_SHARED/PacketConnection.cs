@@ -72,7 +72,7 @@ namespace Shared
         }
 
 
-        private void HandlePacketTrafficServer()
+        private void HandlePacketTrafficServer(int port = 11000)
         {
             LocalUdpClient.Client.ReceiveTimeout = 5000;
             LocalUdpClient.Client.SendTimeout = 5000;
@@ -81,7 +81,7 @@ namespace Shared
                 while (Running)
                 {
                     CheckTimeout();
-                    IPEndPoint clientRemoteEP = new IPEndPoint(IPAddress.Any, 11000);
+                    IPEndPoint clientRemoteEP = new IPEndPoint(IPAddress.Any, port);
                     try
                     {
                         byte[] data = LocalUdpClient.Receive(ref clientRemoteEP);
@@ -173,13 +173,13 @@ namespace Shared
         Thread NetworkTrafficTask;
         IPEndPoint ServerConnection;
         UdpClient LocalUdpClient;
-        public PacketConnection(UdpClient localUdpClient, bool server, IPEndPoint serverConnection = null)
+        public PacketConnection(UdpClient localUdpClient, bool server, IPEndPoint serverConnection = null, int serverport = 11000)
         {
             LocalUdpClient = localUdpClient;
             if (server)
             {
                 LocalUdpClient.Client.SendTimeout = 2000;
-                NetworkTrafficTask = new Thread(HandlePacketTrafficServer);
+                NetworkTrafficTask = new Thread(() => { HandlePacketTrafficServer(serverport); });
                 NetworkTrafficTask.IsBackground = true; 
                 NetworkTrafficTask.Start();
                 return;

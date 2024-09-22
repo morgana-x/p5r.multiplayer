@@ -71,7 +71,8 @@ namespace p5r.code.multiplayerclient
 
             _npcManager = new NpcManager(p5rLib, _logger);
             _multiplayer = new Multiplayer(_npcManager, _logger);
-            
+            _multiplayer.Connect("127.0.0.1", 11000);
+
             /*IP5RLib _p5rLib = p5rLib;
             int fieldMajor = _p5rLib.FlowCaller.FLD_GET_MAJOR();
             int fieldMinor = _p5rLib.FlowCaller.FLD_GET_MINOR();

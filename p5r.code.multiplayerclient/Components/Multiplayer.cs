@@ -1,18 +1,11 @@
 ﻿using Reloaded.Mod.Interfaces;
 using Shared;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using static Shared.PacketConnection;
-using p5r.code.multiplayerclient.Template;
-using System.Numerics;
 using System.Diagnostics;
 using P5R_MP_SERVER;
-using System.Runtime.InteropServices;
+using p5r.code.multiplayerclient.Utility;
 
 
 namespace p5r.code.multiplayerclient.Components
@@ -28,7 +21,6 @@ namespace p5r.code.multiplayerclient.Components
 
         int clientPlayerId = -1;
 
-        bool started = false;
         bool running = false;
 
         Process process;
@@ -40,19 +32,30 @@ namespace p5r.code.multiplayerclient.Components
             _logger = logger;
             Client = new UdpClient();
             process = Process.GetCurrentProcess();
-            Start();
         }
-        public void Cleanup(object sender, EventArgs e)
+        public void Cleanup()
         {
             running = false;
-            PacketConnectionHandler.Cleanup();
+            _npcManager.playerNpcList.Clear();
+            packetsQueue.Clear();
+            if (tickThread != null && tickThread.ThreadState == System.Threading.ThreadState.Running)
+                tickThread.Join();
+            tickThread = null;
+            if (PacketConnectionHandler != null)
+                PacketConnectionHandler.Cleanup();
+            PacketConnectionHandler = null;
         }
-
-        public void Start()
+        public void Disconnect()
         {
+            _logger.WriteLine("Disconnecting!");
+            Client.Close();
+            Cleanup();
+        }
+        public void Connect(string ipaddress, int port)
+        {
+            Cleanup();
             running = true;
-            started = false;
-            IPEndPoint ep = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 11000); // endpoint where server is listening
+            IPEndPoint ep = new IPEndPoint(IPAddress.Parse(ipaddress), port); // endpoint where server is listening
             Client.Connect(ep);
             Client.Send(new byte[] { 0x48, 0x48 }); // Tell server we are not a fraud!
             PacketConnectionHandler = new PacketConnection(Client, false, ep);
@@ -75,7 +78,11 @@ namespace p5r.code.multiplayerclient.Components
         List<Packet> packetsQueue = new List<Packet>(); 
         private void Tick()
         {
-            
+            if (Input.IsKeydown(0x73))
+            {
+                Disconnect();
+                return;
+            }
             DoPacketQueue();
             if (!_npcManager._p5rLib.FlowCaller.Ready())
             {

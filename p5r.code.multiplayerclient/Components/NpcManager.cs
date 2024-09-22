@@ -1,10 +1,5 @@
 ﻿using p5rpc.lib.interfaces;
 using Reloaded.Mod.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace p5r.code.multiplayerclient.Components
 {
@@ -25,12 +20,11 @@ namespace p5r.code.multiplayerclient.Components
         {
             _p5rLib = p5rlib;
             _logger = logger;
-           // Task.Run(Run);
         }
 
         private void OnFieldChange()
         {
-            playerNpcList.Clear(); // Obviously these handles won't be accurate anymore!
+            playerNpcList.Clear();
         }
         public void MP_PLAYER_SET_FIELD(int netId, int[] field)
         {
@@ -212,12 +206,12 @@ namespace p5r.code.multiplayerclient.Components
                 return;
             if (animationId < 0)
                 animationId = 0;
-            
-            // int clone = _p5rLib.FlowCaller.FLD_MODEL_CLONE_ADDMOTION(npcHandle, gNpcGAPMinorId);
-            //  _p5rLib.FlowCaller.FLD_UNIT_WAIT_DISABLE(clone);
             if (animationId == 58)
                 animationId = 0;
+            //int clone = _p5rLib.FlowCaller.FLD_MODEL_CLONE_ADDMOTION(npcHandle, 1);//gNpcGAPMinorId);
+            //_p5rLib.FlowCaller.FLD_UNIT_WAIT_DISABLE(clone);
             _p5rLib.FlowCaller.MDL_ANIM(npcHandle, animationId, gNpcAnimShouldLoop, 0, 1);
+            
             /*WAIT(gNpcAnimTime);
             //FLD_MODEL_REVERT_ADDMOTION(lastSpawnedNpcModelHandle, clone);*/
 

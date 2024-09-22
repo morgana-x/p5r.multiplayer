@@ -1,11 +1,6 @@
 ﻿using Shared;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
 using static Shared.PacketConnection;
 
 namespace P5R_MP_SERVER
@@ -309,7 +304,7 @@ namespace P5R_MP_SERVER
             {
                 player.Animation = BitConverter.ToInt32(packet.Arguments[1]);
                 player.RefreshAnimation = true;
-                Console.WriteLine($"{player.Id}'s animation set to {player.Animation}.");
+                //Console.WriteLine($"{player.Id}'s animation set to {player.Animation}.");
                 return;
             }
         }
@@ -379,14 +374,14 @@ namespace P5R_MP_SERVER
                 }
             }
         }
-        public Server()
+        public Server(int port = 11000)
         {
-            udpServer = new UdpClient(11000);
+            udpServer = new UdpClient(port);
             packetConnection = new PacketConnection(udpServer, true);
             packetConnection.OnPacketReceived += HandlePacketReceived;
             packetConnection.OnClientDisconnect += HandleClientDisconnect;
             packetConnection.OnClientConnect += HandleClientConnect;
-            Console.WriteLine("Started Server!");
+            Console.WriteLine("Started Server! Port: " + port.ToString());
 
             //tickTask = Task.Run(TickTask);
 

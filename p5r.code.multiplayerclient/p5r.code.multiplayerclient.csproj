@@ -52,4 +52,8 @@
     <ProjectReference Include="..\P5R_MP_SHARED\P5R_MP_SHARED.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Utility\" />
+  </ItemGroup>
+
 </Project>

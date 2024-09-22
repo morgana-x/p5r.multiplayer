@@ -65,32 +65,6 @@ namespace p5r.code.multiplayerclient.Components
             tickThread.Start();
         }
 
-
-
-
-        uint getControllerSlot()
-        {
-            for (uint i = 0; i < 4; i++)
-            {
-                if (XInput.IsControllerConnected(i))
-                {
-                    return i;
-                }
-            }
-            return 0;
-        }
-        private void SinglePlayerRun()
-        {
-            while (!started)
-            {
-                Thread.Sleep(10);
-                if (XInput.GetButton(getControllerSlot(), XInputButton.RightThumb))
-                {
-                    Start();
-                    break;
-                }
-            }
-        }
         float[] lastPos = new float[3] { 0, 0, 0 };
         float[] lastRot = new float[3] { 0, 0, 0 };
 

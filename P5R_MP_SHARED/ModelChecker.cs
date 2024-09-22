@@ -8,71 +8,6 @@ namespace P5R_MP_SERVER
 {
     public class ModelChecker
     {
-        static int[] ValidJokerModelMinorIds = new int[]
-        {
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-           // 48, title screen model let's not
-            51,
-            52,
-            61,
-            63,
-            64,
-            65,
-            66,
-            67,
-            69, // Why is this the swim suit model @Atlus Employee
-            71,
-            72,
-            73,
-            99,
-            101,
-            102,
-            103,
-            104,
-            106,
-            107,
-            110,
-            111,
-            112,
-            114,
-            116,
-            117,
-           // 118,
-           // 119,
-            151,
-            152,
-            153,
-            154,
-            155,
-            156,
-            157,
-            158,
-            159,
-            160,
-            161,
-            162,
-            163,
-            164,
-            165,
-            166,
-            167,
-            168,
-            169,
-            170,
-            171,
-            172,
-            173,
-            174,
-            175,
-            176,
-            177,
-            201, // sub id must be 3 or 4
-        };
         public static int[][] ValidModels = new int[][]
         {
             new int[]{1,1,0},
@@ -159,20 +94,5 @@ namespace P5R_MP_SERVER
                 return ValidModels[0];
             return ValidModels[modelId];
         }
-        public static bool IsValidJokerModel(int[] model)
-        {
-            if (model[0] != 1)
-                return false;
-            if (model[1] < 1)
-                return false;
-            if ((model[1] == 201 && (model[2] == 3 || model[2] == 4)))
-                return true;
-            if (model[2] != 0)
-                return false;
-            if (!ValidJokerModelMinorIds.Contains(model[1]))
-                return false;
-            return true;
-        }
-        
     }
 }

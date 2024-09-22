@@ -20,7 +20,9 @@
             PACKET_PLAYER_MESSAGE,
             PACKET_PLAYER_NAME,
 
-            PACKET_REQUEST_PLAYER_DATA
+            PACKET_REQUEST_PLAYER_DATA,
+
+            PACKET_CONFIRM_RECEIVE
         }
         // num of bytes
         public static Dictionary<P5_PACKET, int[]> P5_PACKET_DATA = new Dictionary<P5_PACKET, int[]>()
@@ -47,27 +49,35 @@
 
             [P5_PACKET.PACKET_PLAYER_ANIMATION] = new int[] { 4, 4 },
 
-            [P5_PACKET.PACKET_PLAYER_MODEL] = new int[] { 4, 4}
+            [P5_PACKET.PACKET_PLAYER_MODEL] = new int[] { 4, 4},
+
+            [P5_PACKET.PACKET_CONFIRM_RECEIVE] = new int[] { 2 },
         };
 
         public byte[][] Arguments;
         public P5_PACKET Id;
-
-        public Packet(P5_PACKET id, byte[][] arguments)
+        public short ReliableId;
+        public Packet(P5_PACKET id, byte[][] arguments, short reliableId=0)
         {
             Id = id;
             Arguments = arguments;
+            ReliableId = reliableId;
+        }
+        public bool IsReliable()
+        {
+            return ReliableId != 0;
         }
 
         public static Packet ParsePacket(byte[] raw)
         {
 
-            if (raw.Length < 8)
+            if (raw.Length < 10)
             {
                 return null;
             }
-            int packetId = BitConverter.ToInt32(raw, 0);
-            int dataLength = BitConverter.ToInt32(raw, 4);
+            short reliableId = BitConverter.ToInt16(raw, 0);
+            int packetId = BitConverter.ToInt32(raw, 2);
+            int dataLength = BitConverter.ToInt32(raw, 6);
 
             if (!P5_PACKET_DATA.ContainsKey((P5_PACKET)packetId))
             {
@@ -75,7 +85,7 @@
             }
 
             byte[] rawData = new byte[dataLength];
-            ByteUtil.InsertBytes(ref rawData, 0, 8, raw);
+            ByteUtil.InsertBytes(ref rawData, 0, 10, raw);
 
 
             MemoryStream reader = new MemoryStream(rawData);
@@ -96,15 +106,16 @@
                 lastPacketValue = buffer;
                 Arguments.Add(buffer);
             }
-            return new Packet((P5_PACKET)packetId, Arguments.ToArray());
+            return new Packet((P5_PACKET)packetId, Arguments.ToArray(), reliableId);
         }
 
-        public static byte[] FormatPacket(int packetId, byte[] data)
+        public static byte[] FormatPacket(int packetId, byte[] data, short reliableId = 0)
         {
-            byte[] packet = new byte[4 + 4 + data.Length];
-            ByteUtil.InsertBytes(ref packet, 0, BitConverter.GetBytes(packetId));
-            ByteUtil.InsertBytes(ref packet, 4, BitConverter.GetBytes(data.Length));
-            ByteUtil.InsertBytes(ref packet, 8, data);
+            byte[] packet = new byte[2 + 4 + 4 + data.Length];
+            ByteUtil.InsertBytes(ref packet, 0, BitConverter.GetBytes(reliableId));
+            ByteUtil.InsertBytes(ref packet, 2, BitConverter.GetBytes(packetId));
+            ByteUtil.InsertBytes(ref packet, 6, BitConverter.GetBytes(data.Length));
+            ByteUtil.InsertBytes(ref packet, 10, data);
             return packet;
         }
         public static byte[] FormatPacket(Packet.P5_PACKET packetId, byte[] data)

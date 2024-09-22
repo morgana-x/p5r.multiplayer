@@ -6,6 +6,7 @@ using static Shared.PacketConnection;
 using System.Diagnostics;
 using P5R_MP_SERVER;
 using p5r.code.multiplayerclient.Utility;
+using System.Numerics;
 
 
 namespace p5r.code.multiplayerclient.Components
@@ -203,6 +204,11 @@ namespace p5r.code.multiplayerclient.Components
                 // Heartbeat
                 Client.Send(Packet.FormatPacket(Packet.P5_PACKET.PACKET_HEARTBEAT, new List<byte[]> { BitConverter.GetBytes(78) }));
                 return;
+            }
+            if (packet.IsReliable())
+            {
+                Console.WriteLine("Packet is reliable!");
+                Client.Send(Packet.FormatPacket(Packet.P5_PACKET.PACKET_CONFIRM_RECEIVE, new List<byte[]> { BitConverter.GetBytes(packet.ReliableId) }));
             }
             if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_ASSIGNID)
             {

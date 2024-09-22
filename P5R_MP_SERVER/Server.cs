@@ -42,8 +42,8 @@ namespace P5R_MP_SERVER
             target.SendBytes(udpServer, posData);
             target.SendBytes(udpServer, rotData);
         }
-        private void Tick()
-    {
+        public void Tick()
+        {
             Thread.Sleep(10);
             if (Runtime.CurrentRuntime > nextHeartbeat)
             {
@@ -270,7 +270,11 @@ namespace P5R_MP_SERVER
             {
                 return;
             }
-
+            if (packet.IsReliable())
+            {
+                Console.WriteLine("Packet is reliable!");
+                player.SendBytes(udpServer, Packet.FormatPacket(Packet.P5_PACKET.PACKET_CONFIRM_RECEIVE, new List<byte[]> { BitConverter.GetBytes(packet.ReliableId) }));
+            }
             if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_FIELD)
             {
                 player.Field = new int[] { BitConverter.ToInt32(packet.Arguments[1]), BitConverter.ToInt32(packet.Arguments[2]) };
@@ -358,22 +362,6 @@ namespace P5R_MP_SERVER
         {
             HandlePlayerConnection(args.Endpoint);
         }
-
-        public void TickTask()
-        {
-            while (true)
-            {
-
-                try
-                {
-                    Tick();
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.ToString());
-                }
-            }
-        }
         public Server(int port = 11000)
         {
             udpServer = new UdpClient(port);
@@ -384,7 +372,6 @@ namespace P5R_MP_SERVER
             Console.WriteLine("Started Server! Port: " + port.ToString());
 
             //tickTask = Task.Run(TickTask);
-
 
         }
     }

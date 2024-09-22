@@ -21,7 +21,9 @@ public partial class Program
             }
         }
         Server server = new Server(port);
-        server.TickTask();
-        server.packetConnection.Cleanup();
+        while (true)
+        {
+            server.Tick();
+        }
     }
 }

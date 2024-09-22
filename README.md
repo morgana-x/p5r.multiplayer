@@ -9,6 +9,7 @@
 
 + Run the built server executable
 + launch P5R instances via Reloaded-II with the P5R multiplayer mod enabled. Which connect to localhost
++ 
 (Reccomended to have intro skip patch in P5R Essentials, but do not switch on "Render in background" patch!
 ## Connecting to remote servers
 If you want to connect to remote servers with an ip address that is not localhost:

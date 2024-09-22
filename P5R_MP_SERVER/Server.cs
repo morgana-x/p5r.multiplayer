@@ -362,6 +362,21 @@ namespace P5R_MP_SERVER
         {
             HandlePlayerConnection(args.Endpoint);
         }
+
+        private static string getIpAddress()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+
+            foreach (IPAddress ip in host.AddressList)
+            {
+                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                {
+                    //System.Diagnostics.Debug.WriteLine("LocalIPadress: " + ip);
+                    return ip.ToString();
+                }
+            }
+            return string.Empty;
+        }
         public Server(int port = 11000)
         {
             udpServer = new UdpClient(port);
@@ -369,10 +384,15 @@ namespace P5R_MP_SERVER
             packetConnection.OnPacketReceived += HandlePacketReceived;
             packetConnection.OnClientDisconnect += HandleClientDisconnect;
             packetConnection.OnClientConnect += HandleClientConnect;
-            Console.WriteLine("Started Server! Port: " + port.ToString());
-
-            //tickTask = Task.Run(TickTask);
-
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write($"Started Server at ");
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write($"{getIpAddress()}");
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write(":");
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.Write($"{port}\n");
+            Console.ForegroundColor = ConsoleColor.Gray;
         }
     }
 }

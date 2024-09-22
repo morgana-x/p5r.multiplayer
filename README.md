@@ -5,6 +5,7 @@
 + Add connection menu
 + Make client use List of NetworkedPlayer classes, instead of netid to npcHandle lookup table (For player names etc later on)
 + Messaging/Name system, and menus
++ Add reliable packet system for vital information like player models, names, ids etc
 ## Current setup
 
 + Run the built server executable

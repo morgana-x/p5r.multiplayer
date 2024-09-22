@@ -9,11 +9,8 @@ namespace P5R_MP_SERVER
     {
         UdpClient udpServer;
         public PacketConnection packetConnection;
-        Task tickTask;
         public Dictionary<IPEndPoint, int> IpAddressMap = new Dictionary<IPEndPoint, int>();
         public List<NetworkedPlayer> PlayerList = new List<NetworkedPlayer>();
-
-
         long nextHeartbeat = 0;
 
         public bool IsInSameField(NetworkedPlayer p1, NetworkedPlayer p2)
@@ -55,7 +52,9 @@ namespace P5R_MP_SERVER
             }
             foreach (NetworkedPlayer pl in PlayerList)
             {
-
+                byte[] removePlayerData = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_REMOVE, new List<byte[]> {
+                        BitConverter.GetBytes(pl.Id),
+                    });
                 if (pl.RefreshPosition)
                 {
                     pl.RefreshPosition = false;
@@ -65,27 +64,18 @@ namespace P5R_MP_SERVER
                         BitConverter.GetBytes(pl.Position[1]), 
                         BitConverter.GetBytes(pl.Position[2]) 
                     });
-                   /* byte[] removePlayerData = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_REMOVE, new List<byte[]> {
-                        BitConverter.GetBytes(pl.Id),
-                    });*/
                     foreach (NetworkedPlayer p in PlayerList)
                     {
                         if (p.Id == pl.Id)
-                        {
                             continue;
-                        }
                         if (!IsInSameField(p, pl))
-                        {
-                          //  p.SendBytes(udpServer, removePlayerData);
                             continue;
-                        }
                         p.SendBytes(udpServer, data);
                     }
 
                 }
                 if (pl.RefreshRotation)
                 {
-
                     pl.RefreshRotation = false;
                     byte[] data = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_ROTATION, new List<byte[]> {
                         BitConverter.GetBytes(pl.Id),
@@ -93,18 +83,12 @@ namespace P5R_MP_SERVER
                         BitConverter.GetBytes(pl.Rotation[1]),
                         BitConverter.GetBytes(pl.Rotation[2])
                     });
-                   /* byte[] removePlayerData = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_REMOVE, new List<byte[]> {
-                        BitConverter.GetBytes(pl.Id),
-                    });*/
                     foreach (NetworkedPlayer p in PlayerList)
                     {
                         if (p.Id == pl.Id)
-                        {
                             continue;
-                        }
                         if (!IsInSameField(p, pl))
                         {
-                          //  p.SendBytes(udpServer, removePlayerData);
                             continue;
                         }
                         p.SendBytes(udpServer, data);
@@ -120,9 +104,6 @@ namespace P5R_MP_SERVER
                         BitConverter.GetBytes(pl.Field[0]),
                         BitConverter.GetBytes(pl.Field[1]),
                     });
-                    byte[] removePlayerData = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_REMOVE, new List<byte[]> {
-                        BitConverter.GetBytes(pl.Id),
-                    });
                     foreach (NetworkedPlayer p in PlayerList)
                     {
                         if (p.Id == pl.Id)
@@ -133,7 +114,6 @@ namespace P5R_MP_SERVER
                         {
                             NetworkPlayer(p, pl);
                             NetworkPlayer(pl, p);
-                            // continue;
                         }
                         else
                         {
@@ -145,15 +125,6 @@ namespace P5R_MP_SERVER
                 if (pl.RefreshModel)
                 {
                     pl.RefreshModel = false;
-                   /* byte[] data = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_MODEL, new List<byte[]> {
-                        BitConverter.GetBytes(pl.Id),
-                        BitConverter.GetBytes(pl.Model[0]),
-                        BitConverter.GetBytes(pl.Model[1]),
-                        BitConverter.GetBytes(pl.Model[2]),
-                    });*/
-                    byte[] removePlayerData = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_REMOVE, new List<byte[]> {
-                        BitConverter.GetBytes(pl.Id),
-                    });
                     foreach (NetworkedPlayer p in PlayerList)
                     {
                         if (p.Id == pl.Id)
@@ -193,7 +164,7 @@ namespace P5R_MP_SERVER
         }
         private void RemovePlayer(NetworkedPlayer player)
         {
-            byte[] data = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_REMOVE, new List<byte[]> {
+            byte[] data = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_DISCONNECT, new List<byte[]> {
                         BitConverter.GetBytes(player.Id),
                     });
             foreach (NetworkedPlayer p in PlayerList)
@@ -223,7 +194,6 @@ namespace P5R_MP_SERVER
             {
                 if (!IpAddressMap.ContainsKey(args.Endpoint))
                 {
-                    // Console.WriteLine("Not real!");
                     return;
                 }
                 NetworkedPlayer pl = getPlayerFromId(IpAddressMap[args.Endpoint]);
@@ -260,6 +230,8 @@ namespace P5R_MP_SERVER
             int pId = IpAddressMap[endPoint];
 
             NetworkedPlayer player = getPlayerFromId(pId);
+            if (player == null)
+                return;
 
             Packet packet = Packet.ParsePacket(data);
             if (packet == null || packet.Id == null)
@@ -301,7 +273,7 @@ namespace P5R_MP_SERVER
                 player.Model = BitConverter.ToInt32(packet.Arguments[1]);
                 player.RefreshModel = true;
                 int[] model = ModelChecker.GetModelFromId(player.Model);
-                Console.WriteLine($"{player.Id}'s model set to {string.Join("_", model)}.");
+                //Console.WriteLine($"{player.Id}'s model set to {string.Join("_", model)}.");
                 return;
             }
             if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_ANIMATION)
@@ -371,7 +343,6 @@ namespace P5R_MP_SERVER
             {
                 if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
                 {
-                    //System.Diagnostics.Debug.WriteLine("LocalIPadress: " + ip);
                     return ip.ToString();
                 }
             }

@@ -15,6 +15,7 @@
 
             PACKET_PLAYER_ASSIGNID,
             PACKET_PLAYER_CONNECT,
+            PACKET_PLAYER_DISCONNECT,
             PACKET_PLAYER_REMOVE,
 
             PACKET_PLAYER_MESSAGE,
@@ -32,6 +33,8 @@
             [P5_PACKET.PACKET_HEARTBEAT] = new int[] { 0 },
 
             [P5_PACKET.PACKET_PLAYER_CONNECT] = new int[] { 4 },
+
+            [P5_PACKET.PACKET_PLAYER_DISCONNECT] = new int[] { 4 },
 
             [P5_PACKET.PACKET_PLAYER_REMOVE] = new int[] { 4 },
 

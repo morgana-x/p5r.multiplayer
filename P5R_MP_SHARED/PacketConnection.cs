@@ -68,6 +68,7 @@ namespace Shared
             }
             foreach(var a in toBeRemoved)
             {
+                Console.WriteLine("Timeout for client " + a.ToString());
                 DisconnectEndpoint(a);
             }
         }

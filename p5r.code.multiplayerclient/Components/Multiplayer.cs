@@ -199,12 +199,6 @@ namespace p5r.code.multiplayerclient.Components
         }
         private void HandlePacket(Packet packet)
         {
-            if (packet.Id == Packet.P5_PACKET.PACKET_HEARTBEAT)
-            {
-                // Heartbeat
-                Client.Send(Packet.FormatPacket(Packet.P5_PACKET.PACKET_HEARTBEAT, new List<byte[]> { BitConverter.GetBytes(78) }));
-                return;
-            }
             if (packet.IsReliable())
             {
                 Console.WriteLine("Packet is reliable!");
@@ -227,7 +221,14 @@ namespace p5r.code.multiplayerclient.Components
             {
                 int id = BitConverter.ToInt32(packet.Arguments[0]);
                 _npcManager.MP_REMOVE_PLAYER(id);
-                _logger.WriteLine($"Player {id} disconneceted!");
+                _logger.WriteLine($"Player {id} hidden!");
+                return;
+            }
+            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_DISCONNECT)
+            {
+                int id = BitConverter.ToInt32(packet.Arguments[0]);
+                _npcManager.MP_REMOVE_PLAYER(id);
+                _logger.WriteLine($"Player {id} disconnected!");
                 return;
             }
             if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_POSITION)
@@ -282,6 +283,12 @@ namespace p5r.code.multiplayerclient.Components
             if (packet == null)
             {
                 Console.WriteLine("Error parsing packet!");
+                return;
+            }
+            if (packet.Id == Packet.P5_PACKET.PACKET_HEARTBEAT)
+            {
+                // Heartbeat
+                Client.Send(Packet.FormatPacket(Packet.P5_PACKET.PACKET_HEARTBEAT, new List<byte[]> { BitConverter.GetBytes(78) }));
                 return;
             }
             packetsQueue.Add(packet);

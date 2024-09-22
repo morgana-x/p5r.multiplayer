@@ -79,11 +79,11 @@ namespace p5r.code.multiplayerclient.Components
         List<Packet> packetsQueue = new List<Packet>(); 
         private void Tick()
         {
-            if (Input.IsKeydown(0x73))
+            /*if (Input.IsKeydown(0x73))
             {
                 Disconnect();
                 return;
-            }
+            }*/
             DoPacketQueue();
             if (!_npcManager._p5rLib.FlowCaller.Ready())
             {

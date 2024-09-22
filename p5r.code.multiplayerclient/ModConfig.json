@@ -1,0 +1,21 @@
+{
+  "ModId": "p5r.code.multiplayerclient",
+  "ModName": "P5R Multiplayer",
+  "ModAuthor": "morgana",
+  "ModVersion": "1.0.0",
+  "ModDescription": "multiplayer in Persona 5 Royal",
+  "ModDll": "p5r.code.multiplayerclient.dll",
+  "ModIcon": "Preview.png",
+  "ModR2RManagedDll32": "x86/p5r.code.multiplayerclient.dll",
+  "ModR2RManagedDll64": "x64/p5r.code.multiplayerclient.dll",
+  "ModNativeDll32": "",
+  "ModNativeDll64": "",
+  "IsLibrary": false,
+  "ReleaseMetadataFileName": "p5r.code.multiplayerclient.ReleaseMetadata.json",
+  "PluginData": {},
+  "IsUniversalMod": false,
+  "ModDependencies": [ "reloaded.sharedlib.hooks", "p5rpc.lib" ],
+  "OptionalDependencies": [],
+  "SupportedAppId": ["p5r.exe"],
+  "ProjectUrl": ""
+}

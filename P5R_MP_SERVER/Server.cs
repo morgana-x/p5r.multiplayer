@@ -259,7 +259,7 @@ namespace P5R_MP_SERVER
             }
             int pId = IpAddressMap[endPoint];
 
-            NetworkedPlayer player = PlayerList[pId];
+            NetworkedPlayer player = getPlayerFromId(pId);
 
             Packet packet = Packet.ParsePacket(data);
             if (packet == null || packet.Id == null)

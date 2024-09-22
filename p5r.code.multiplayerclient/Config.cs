@@ -25,8 +25,16 @@ namespace p5r.code.multiplayerclient.Configuration
 
             The `DefaultValue` attribute is used as part of the `Reset` button in Reloaded-Launcher.
         */
+        [DisplayName("Server IP Address")]
+        [Description("Ip address of the server to connect to.")]
+        [DefaultValue("127.0.0.1")]
+        public string ServerIpAddress { get; set; } = "127.0.0.1";
 
-        [DisplayName("String")]
+        [DisplayName("Server port")]
+        [Description("Port of server to connec to")]
+        [DefaultValue(11000)]
+        public int ServerPort { get; set; } = 11000;
+        /*[DisplayName("String")]
         [Description("This is a string.")]
         [DefaultValue("Default Name")]
         public string String { get; set; } = "Default Name";
@@ -100,7 +108,7 @@ namespace p5r.code.multiplayerclient.Configuration
             fileNameLabel: "ModFolder",
             multiSelect: true,
             forceFileSystem: true)]
-        public string Folder { get; set; } = "";
+        public string Folder { get; set; } = "";*/
     }
 
     /// <summary>

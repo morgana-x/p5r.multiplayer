@@ -68,10 +68,10 @@ namespace p5r.code.multiplayerclient
                 _logger.WriteLine("Unabled to get P5R Lib! UH OH");
                 return;
             }
-
+            
             _npcManager = new NpcManager(p5rLib, _logger);
             _multiplayer = new Multiplayer(_npcManager, _logger);
-            _multiplayer.Connect("127.0.0.1", 11000);
+            _multiplayer.Connect(_configuration.ServerIpAddress, _configuration.ServerPort);
 
             /*IP5RLib _p5rLib = p5rLib;
             int fieldMajor = _p5rLib.FlowCaller.FLD_GET_MAJOR();

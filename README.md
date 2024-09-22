@@ -1,5 +1,10 @@
 # p5r.code.multiplayerclient
-
+## Todo:
++ Fix crashes when two players load into a battle at the same time in same field
++ Fix player npcs not having Joker's full animation set, resulting in sometimes having an idle animation instead of jump, slide etc
++ Add connection menu
++ Make client use List of NetworkedPlayer classes, instead of netid to npcHandle lookup table (For player names etc later on)
++ Messaging/Name system, and menus
 ## Current setup
 
 + Run the built server executable

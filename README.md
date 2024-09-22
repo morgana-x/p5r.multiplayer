@@ -17,6 +17,7 @@ If you want to connect to remote servers with an ip address that is not localhos
 
 Open mod.cs in p5r multiplayer client, and change ip address and port to what you want the client to connect to on launch
 
+Caution! Reliable packets are not complete so important information like player model changes may not be networked occasionaly due to data loss over the internet!
 ## Hosting options
 You can change what port you host the server on by applying the --port 1234 argument when launching the server
 

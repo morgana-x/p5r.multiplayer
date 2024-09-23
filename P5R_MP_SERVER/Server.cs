@@ -1,6 +1,7 @@
 ﻿using Shared;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using static Shared.PacketConnection;
 
 namespace P5R_MP_SERVER
@@ -13,11 +14,13 @@ namespace P5R_MP_SERVER
         public List<NetworkedPlayer> PlayerList = new List<NetworkedPlayer>();
         long nextHeartbeat = 0;
 
+        int MaxNameLength = 16;
+
         public bool IsInSameField(NetworkedPlayer p1, NetworkedPlayer p2)
         {
             return p1.Field.SequenceEqual(p2.Field) && p1.Field[0] != -1;
         }
-        private void NetworkPlayer(NetworkedPlayer player, NetworkedPlayer target)
+        private void NetworkPlayerEntity(NetworkedPlayer player, NetworkedPlayer target)
         {
             byte[] posData = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_POSITION, new List<byte[]> {
                                 BitConverter.GetBytes(player.Id),
@@ -38,6 +41,22 @@ namespace P5R_MP_SERVER
             target.SendBytes(udpServer, modelData);
             target.SendBytes(udpServer, posData);
             target.SendBytes(udpServer, rotData);
+        }
+        private void NetworkPlayerInfo(NetworkedPlayer player, NetworkedPlayer target)
+        {
+            byte[] nameBytes = Encoding.UTF8.GetBytes(player.Name);
+            byte[] nameData = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_NAME, new List<byte[]> {
+                                BitConverter.GetBytes(player.Id),
+                                BitConverter.GetBytes(nameBytes.Length),
+                                nameBytes
+                            });
+            byte[] fieldData = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_FIELD, new List<byte[]> {
+                        BitConverter.GetBytes(player.Id),
+                        BitConverter.GetBytes(player.Field[0]),
+                        BitConverter.GetBytes(player.Field[1]),
+                    });
+            target.SendBytes(udpServer, nameData);
+            target.SendBytes(udpServer, fieldData);
         }
         public void Tick()
         {
@@ -112,8 +131,8 @@ namespace P5R_MP_SERVER
                         }
                         if (IsInSameField(p, pl))
                         {
-                            NetworkPlayer(p, pl);
-                            NetworkPlayer(pl, p);
+                            NetworkPlayerEntity(p, pl);
+                            NetworkPlayerEntity(pl, p);
                         }
                         else
                         {
@@ -136,7 +155,7 @@ namespace P5R_MP_SERVER
                             p.SendBytes(udpServer, removePlayerData);
                             continue;
                         }
-                        NetworkPlayer(pl, p);
+                        NetworkPlayerEntity(pl, p);
                     }
                 }
                 if (pl.RefreshAnimation)
@@ -283,6 +302,21 @@ namespace P5R_MP_SERVER
                 //Console.WriteLine($"{player.Id}'s animation set to {player.Animation}.");
                 return;
             }
+            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_NAME)
+            {
+                int nameLength = BitConverter.ToInt32(packet.Arguments[1]);
+                if (nameLength > MaxNameLength)
+                    nameLength = MaxNameLength;
+                string newname = Encoding.UTF8.GetString(packet.Arguments[2], 0, nameLength);
+                Console.WriteLine($"Set {player.Id}'s name from {player.Name} to {newname}");
+                player.Name = newname;
+                foreach (NetworkedPlayer pl in PlayerList)
+                {
+                    if (player.Id == pl.Id)
+                        continue;
+                    NetworkPlayerInfo(player, pl);
+                }
+            }
         }
 
         private int getFreePlayerId()
@@ -326,6 +360,8 @@ namespace P5R_MP_SERVER
                 if (player.Id == pl.Id)
                     continue;
                 player.SendBytes(udpServer, Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_CONNECT, new List<byte[]> { BitConverter.GetBytes(pl.Id) }));
+                NetworkPlayerInfo(pl, player);
+                NetworkPlayerInfo(player, pl);
                 pl.RefreshPosition = true;
                 pl.RefreshRotation = true;
             }

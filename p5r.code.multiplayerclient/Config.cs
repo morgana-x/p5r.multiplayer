@@ -34,11 +34,12 @@ namespace p5r.code.multiplayerclient.Configuration
         [Description("Port of server to connec to")]
         [DefaultValue(11000)]
         public int ServerPort { get; set; } = 11000;
-        /*[DisplayName("String")]
-        [Description("This is a string.")]
-        [DefaultValue("Default Name")]
-        public string String { get; set; } = "Default Name";
 
+        [DisplayName("Player name")]
+        [Description("Name that will be networked to the server")]
+        [DefaultValue("Joker")]
+        public string ClientName { get; set; } = "Joker";
+        /*
         [DisplayName("Int")]
         [Description("This is an int.")]
         [DefaultValue(42)]

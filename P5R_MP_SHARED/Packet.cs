@@ -1,4 +1,7 @@
-﻿namespace Shared
+﻿using System.Net;
+using System.Net.Sockets;
+
+namespace Shared
 {
     public class Packet
     {
@@ -70,7 +73,6 @@
         {
             return ReliableId != 0;
         }
-
         public static Packet ParsePacket(byte[] raw)
         {
 
@@ -125,18 +127,18 @@
         {
             return FormatPacket((int)packetId, data);
         }
-        public static byte[] FormatPacket(int packetId, List<byte[]> args)
+        public static byte[] FormatPacket(int packetId, List<byte[]> args, short reliableId = 0)
         {
             MemoryStream dataToBePacked = new MemoryStream();
             foreach (byte[] arg in args)
             {
                 dataToBePacked.Write(arg);
             }
-            return FormatPacket(packetId, dataToBePacked.ToArray());
+            return FormatPacket(packetId, dataToBePacked.ToArray(), reliableId);
         }
-        public static byte[] FormatPacket(Packet.P5_PACKET packetId, List<byte[]> args)
+        public static byte[] FormatPacket(Packet.P5_PACKET packetId, List<byte[]> args, short reliableId =0)
         {
-            return FormatPacket((int)packetId, args);
+            return FormatPacket((int)packetId, args, reliableId);
         }
     }
 }

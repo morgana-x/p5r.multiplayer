@@ -70,7 +70,7 @@ namespace p5r.code.multiplayerclient
             }
             
             _npcManager = new NpcManager(p5rLib, _logger);
-            _multiplayer = new Multiplayer(_npcManager, _logger);
+            _multiplayer = new Multiplayer(_npcManager, _logger, _configuration);
             _multiplayer.Connect(_configuration.ServerIpAddress, _configuration.ServerPort);
 
             /*IP5RLib _p5rLib = p5rLib;

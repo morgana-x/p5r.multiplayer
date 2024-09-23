@@ -115,10 +115,9 @@ namespace p5r.code.multiplayerclient.Components
             SendClientInfoToServer();
             DoPacketQueue();
             if (!_npcManager._p5rLib.FlowCaller.Ready())
-            {
                 return;
-            }
-           // Console.WriteLine(_npcManager.PC_GET_HANDLE().ToString());
+            UpdatePlayerPositions();
+          // Console.WriteLine(_npcManager.PC_GET_HANDLE().ToString());
             if (_npcManager.FIELD_CHECK_CHANGE())
             {
                 SendReliablePacket(Packet.P5_PACKET.PACKET_PLAYER_FIELD, new List<byte[]>()
@@ -298,6 +297,34 @@ namespace p5r.code.multiplayerclient.Components
             //reliablePacketsUnconfirmed.Add(packetId, new reliablePacket() { packet = packetData, time = DateTime.Now});
             Client.Send(packetData);
         }
+
+        private void UpdatePlayerPositions()
+        {
+            foreach (var player in PlayerList.Values)
+            {
+                if (player.RefreshModel)
+                {
+                    player.RefreshModel = false;
+                    int[] model = ModelChecker.GetModelFromId(player.Model);
+                    _npcManager.MP_SYNC_PLAYER_MODEL(player.Id, model[0], model[1], model[2]);
+                }
+                if (player.RefreshPosition)
+                {
+                    player.RefreshPosition = false;
+                    _npcManager.MP_SYNC_PLAYER_POS(player.Id, player.Position);
+                }
+                if (player.RefreshRotation)
+                {
+                    player.RefreshRotation = false;
+                    _npcManager.MP_SYNC_PLAYER_ROT(player.Id, player.Rotation);
+                }
+                if (player.RefreshAnimation)
+                {
+                    player.RefreshAnimation = false;
+                    _npcManager.MP_SYNC_PLAYER_ANIMATION(player.Id, player.Animation);
+                }
+            }
+        }
         private void HandlePacket(Packet packet)
         {
             if (packet.IsReliable())
@@ -305,15 +332,29 @@ namespace p5r.code.multiplayerclient.Components
                 Console.WriteLine("Packet is reliable!");
                 Client.Send(Packet.FormatPacket(Packet.P5_PACKET.PACKET_CONFIRM_RECEIVE, new List<byte[]> { BitConverter.GetBytes(packet.ReliableId) }));
             }
-            if (packet.Id == Packet.P5_PACKET.PACKET_CONFIRM_RECEIVE)
-            {
-                short id = BitConverter.ToInt16(packet.Arguments[0]);
-                // Todo: Add reliable packet logic here!
-            }
             if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_ASSIGNID)
             {
                 clientPlayerId = BitConverter.ToInt32(packet.Arguments[0]);
                 _logger.WriteLine("Set local id to " + clientPlayerId);
+                return;
+            }
+            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_POSITION)
+            {
+                int id = BitConverter.ToInt32(packet.Arguments[0]);
+                NetworkedPlayer player = getPlayer(id);
+                player.Position = new float[3] { BitConverter.ToSingle(packet.Arguments[1]), BitConverter.ToSingle(packet.Arguments[2]), BitConverter.ToSingle(packet.Arguments[3]) };
+                player.RefreshPosition = true;
+                //_npcManager.MP_SYNC_PLAYER_POS(id, new float[3] { BitConverter.ToSingle(packet.Arguments[1]), BitConverter.ToSingle(packet.Arguments[2]), BitConverter.ToSingle(packet.Arguments[3]) });
+                return;
+            }
+
+            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_ROTATION)
+            {
+                int id = BitConverter.ToInt32(packet.Arguments[0]);
+                NetworkedPlayer player = getPlayer(id);
+                player.Rotation = new float[3] { BitConverter.ToSingle(packet.Arguments[1]), BitConverter.ToSingle(packet.Arguments[2]), BitConverter.ToSingle(packet.Arguments[3]) };
+                player.RefreshRotation = true;
+                //_npcManager.MP_SYNC_PLAYER_ROT(id, new float[3] { BitConverter.ToSingle(packet.Arguments[1]), BitConverter.ToSingle(packet.Arguments[2]), BitConverter.ToSingle(packet.Arguments[3]) });
                 return;
             }
             if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_CONNECT)
@@ -328,28 +369,12 @@ namespace p5r.code.multiplayerclient.Components
             {
                 int id = BitConverter.ToInt32(packet.Arguments[0]);
                 _npcManager.MP_REMOVE_PLAYER(id);
-               // _logger.WriteLine($"Player {id} hidden!");
                 return;
             }
             if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_DISCONNECT)
             {
                 int id = BitConverter.ToInt32(packet.Arguments[0]);
-                //_npcManager.MP_REMOVE_PLAYER(id);
-                NetworkedPlayer player = getPlayer(id);
                 RemovePlayer(id);
-                return;
-            }
-            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_POSITION)
-            {
-                int id = BitConverter.ToInt32(packet.Arguments[0]);
-                _npcManager.MP_SYNC_PLAYER_POS(id, new float[3] { BitConverter.ToSingle(packet.Arguments[1]), BitConverter.ToSingle(packet.Arguments[2]), BitConverter.ToSingle(packet.Arguments[3]) });
-                return;
-            }
-
-            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_ROTATION)
-            {
-                int id = BitConverter.ToInt32(packet.Arguments[0]);
-                _npcManager.MP_SYNC_PLAYER_ROT(id, new float[3] { BitConverter.ToSingle(packet.Arguments[1]), BitConverter.ToSingle(packet.Arguments[2]), BitConverter.ToSingle(packet.Arguments[3]) });
                 return;
             }
             if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_MODEL)
@@ -357,15 +382,9 @@ namespace p5r.code.multiplayerclient.Components
                 int id = BitConverter.ToInt32(packet.Arguments[0]);
                 int modelId = BitConverter.ToInt32(packet.Arguments[1]);
                 int[] model = ModelChecker.GetModelFromId(modelId);
-                try
-                {
-                    _npcManager.MP_SYNC_PLAYER_MODEL(id, model[0], model[1], model[2]);
-                }
-                catch(Exception e) 
-                {
-                    Console.WriteLine(e.ToString());
-                }
                 NetworkedPlayer player = getPlayer(id);
+                player.Model = modelId;
+                player.RefreshModel = true;
                 Console.WriteLine($"{player.Name}({id})'s model set to {string.Join("_", model)}.");
                 return;
             }
@@ -374,16 +393,19 @@ namespace p5r.code.multiplayerclient.Components
                 int id = BitConverter.ToInt32(packet.Arguments[0]);
                 int field_major = BitConverter.ToInt32(packet.Arguments[1]);
                 int field_minor = BitConverter.ToInt32(packet.Arguments[2]);
-                _npcManager.MP_PLAYER_SET_FIELD(id, new int[] { field_major, field_minor });
+                //_npcManager.MP_PLAYER_SET_FIELD(id, new int[] { field_major, field_minor });
                 NetworkedPlayer player = getPlayer(id);
+                player.Field = new int[] {field_major, field_minor};
                 _logger.WriteLine($"{player.Name}({id})'s field set to {string.Join("_", new int[] { field_major, field_minor })}.");
                 return;
             }
             if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_ANIMATION)
             {
                 int id = BitConverter.ToInt32(packet.Arguments[0]);
+                NetworkedPlayer player = getPlayer(id);
                 int animation = BitConverter.ToInt32(packet.Arguments[1]);
-                _npcManager.MP_SYNC_PLAYER_ANIMATION(id, animation);
+                player.Animation = animation;
+                player.RefreshAnimation = true;
                 return;
             }
             if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_NAME)
@@ -413,7 +435,21 @@ namespace p5r.code.multiplayerclient.Components
                 Client.Send(Packet.FormatPacket(Packet.P5_PACKET.PACKET_HEARTBEAT, new List<byte[]> { BitConverter.GetBytes(78) }));
                 return;
             }
-            packetsQueue.Add(packet);
+            if (packet.Id == Packet.P5_PACKET.PACKET_CONFIRM_RECEIVE)
+            {
+                short id = BitConverter.ToInt16(packet.Arguments[0]);
+                // Todo: Add reliable packet logic here!
+                return;
+            }
+            try
+            {
+                HandlePacket(packet);
+            }
+            catch (Exception ex)
+            {
+                packetsQueue.Add(packet);
+            }
+           // packetsQueue.Add(packet);
         }
 
     }

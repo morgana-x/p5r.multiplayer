@@ -53,8 +53,7 @@ namespace p5r.code.multiplayerclient.Components
         {
             if (!playerNpcList.ContainsKey(netId))
                 return;
-            if (PC_GET_HANDLE() != -1)
-                NPC_DESPAWN(playerNpcList[netId]);
+            NPC_DESPAWN(playerNpcList[netId]);
             playerNpcList.Remove(netId);
         }
         public void MP_SYNC_PLAYER_POS(int netid, float[] pos)

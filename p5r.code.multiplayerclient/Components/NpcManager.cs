@@ -153,6 +153,12 @@ namespace p5r.code.multiplayerclient.Components
             return NPC_GET_ANIM(pcHandle);
 
         }
+        public int FLD_GET_BKUP_FIELD_TYPE()
+        {
+            if (!_p5rLib.FlowCaller.Ready())
+                return -1;
+            return _p5rLib.FlowCaller.FLD_GET_BKUP_FIELD_TYPE();
+        }
         static int[] DefaultModel = new int[3] { 1, 1, 0 };
         public int[] PC_GET_MODEL(int pcHandle)
         {

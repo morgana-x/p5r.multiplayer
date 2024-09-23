@@ -6,10 +6,11 @@ A mod that adds multiplayer to Persona 5 Royal. Only intends to sync player char
 + Fix player npcs not having Joker's full animation set, resulting in sometimes having an idle animation instead of jump, slide etc
 + Chat system and menu
 + Add reliable packet system for vital information like player models, names, ids etc
++ Fix laggy synced movement of other players (Might be to do with P5R Lib's limitations)
 ## Current setup
 + Run the built server executable
 + launch P5R instances via Reloaded-II with the P5R multiplayer mod enabled. Which connect to the server
-(Reccomended to have intro skip patch in P5R Essentials, but do not switch on "Render in background" patch!
+(Reccomended to have intro skip patch in P5R Essentials)
 ## Connecting to remote servers
 If you want to connect to remote servers with an ip address that is not localhost:
 + Ensure desired server has port forwarded the port it's using

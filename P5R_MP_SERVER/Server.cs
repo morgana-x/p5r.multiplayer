@@ -126,9 +126,7 @@ namespace P5R_MP_SERVER
                     foreach (NetworkedPlayer p in PlayerList)
                     {
                         if (p.Id == pl.Id)
-                        {
                             continue;
-                        }
                         if (IsInSameField(p, pl))
                         {
                             NetworkPlayerEntity(p, pl);
@@ -147,9 +145,7 @@ namespace P5R_MP_SERVER
                     foreach (NetworkedPlayer p in PlayerList)
                     {
                         if (p.Id == pl.Id)
-                        {
                             continue;
-                        }
                         if (!IsInSameField(p, pl))
                         {
                             p.SendBytes(udpServer, removePlayerData);
@@ -169,13 +165,9 @@ namespace P5R_MP_SERVER
                     foreach (NetworkedPlayer p in PlayerList)
                     {
                         if (p.Id == pl.Id)
-                        {
                             continue;
-                        }
                         if (!IsInSameField(p, pl))
-                        {
                             continue;
-                        }
                         p.SendBytes(udpServer,packet);
                     }
                 }
@@ -189,9 +181,7 @@ namespace P5R_MP_SERVER
             foreach (NetworkedPlayer p in PlayerList)
             {
                 if (p.Id == player.Id)
-                {
                     continue;
-                }
                 p.SendBytes(udpServer, data);
             }
             PlayerList.Remove(player);
@@ -212,12 +202,12 @@ namespace P5R_MP_SERVER
             try
             {
                 if (!IpAddressMap.ContainsKey(args.Endpoint))
-                {
                     return;
-                }
+
                 NetworkedPlayer pl = getPlayerFromId(IpAddressMap[args.Endpoint]);
                 if (pl == null)
                     return;
+
                 RemovePlayer(pl);
                 Console.WriteLine(pl.Name + " Disconnected!");        
             }
@@ -229,18 +219,16 @@ namespace P5R_MP_SERVER
         public void HandlePacketReceived(object sender, PacketReceivedArgs args)
         {
             if (args.Data.Length < 1)
-            {
                 return;
-            }
+
             HandlePlayerPacket(args.Endpoint, args.Data);
         }
 
         public void HandlePlayerPacket(IPEndPoint endPoint, byte[] data)
         {
             if (data.Length < 1)
-            {
                 return;
-            }
+
             if (!IpAddressMap.ContainsKey(endPoint))
             {
                 Console.WriteLine("Unverified player cannot handle packet!");

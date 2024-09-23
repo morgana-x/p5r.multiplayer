@@ -12,7 +12,7 @@ namespace P5R_MP_SERVER
         public PacketConnection packetConnection;
         public Dictionary<IPEndPoint, int> IpAddressMap = new Dictionary<IPEndPoint, int>();
         public List<NetworkedPlayer> PlayerList = new List<NetworkedPlayer>();
-        long nextHeartbeat = 0;
+        DateTime nextHeartbeat = DateTime.Now;
 
         int MaxNameLength = 16;
 
@@ -61,9 +61,9 @@ namespace P5R_MP_SERVER
         public void Tick()
         {
             Thread.Sleep(10);
-            if (Runtime.CurrentRuntime > nextHeartbeat)
+            if (DateTime.Now > nextHeartbeat)
             {
-                nextHeartbeat = Runtime.CurrentRuntime + 500;
+                nextHeartbeat = DateTime.Now.AddMilliseconds(500); //Runtime.CurrentRuntime + 500;
                 foreach (NetworkedPlayer pl in PlayerList) // Send heartbeat
                 {
                     pl.SendBytes(udpServer, Packet.FormatPacket(Packet.P5_PACKET.PACKET_HEARTBEAT, new List<byte[]> { new byte[] {0x0} }));

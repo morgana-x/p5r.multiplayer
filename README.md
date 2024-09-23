@@ -14,8 +14,9 @@
 (Reccomended to have intro skip patch in P5R Essentials, but do not switch on "Render in background" patch!
 ## Connecting to remote servers
 If you want to connect to remote servers with an ip address that is not localhost:
-
-Open mod.cs in p5r multiplayer client, and change ip address and port to what you want the client to connect to on launch
++ Ensure desired server has port forwarded the port it's using
++ Open the Reloaded-II's mod configuration
++ Change ip address and port to that of which your desired server has. (Server prints the public ip and port in server console for convenience on start)
 
 Caution! Reliable packets are not complete so important information like player model changes may not be networked occasionaly due to data loss over the internet!
 ## Hosting options

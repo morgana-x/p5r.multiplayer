@@ -118,6 +118,7 @@ namespace p5r.code.multiplayerclient.Components
             {
                 return;
             }
+           // Console.WriteLine(_npcManager.PC_GET_HANDLE().ToString());
             if (_npcManager.FIELD_CHECK_CHANGE())
             {
                 SendReliablePacket(Packet.P5_PACKET.PACKET_PLAYER_FIELD, new List<byte[]>()

@@ -13,7 +13,6 @@ namespace p5r.code.multiplayerclient.Components
         // Also like a neat small dictionary anyway (Don't currently have support for networking names / steamids and other junk)
 
         public Dictionary<int, int> playerNpcList = new Dictionary<int, int>();
-       // public Dictionary<int, int[]> playerFieldList = new Dictionary<int, int[]>();
 
         public int[] CurrentField = new int[] { 0, 0 };
         public NpcManager(IP5RLib p5rlib, ILogger logger)
@@ -28,24 +27,16 @@ namespace p5r.code.multiplayerclient.Components
         }
         public void MP_PLAYER_SET_FIELD(int netId, int[] field)
         {
-            //if (!playerFieldList.ContainsKey(netId))
-            //    playerFieldList.Add(netId, field);
-            //playerFieldList[netId] = field;
-            if (field == CurrentField)
-            {
-                MP_SPAWN_PLAYER(netId);
-            }
-
+            if (field != CurrentField)
+                return;
+            MP_SPAWN_PLAYER(netId);
         }
 
         public void MP_SPAWN_PLAYER(int netId, int modelMajor=1, int modelMinor=1, int modelSub=0)
         {
-            
             int npcHandle = NPC_SPAWN(modelMajor, modelMinor, modelSub);
             if (npcHandle == -1)
-            {
                 return;
-            }
             if (!playerNpcList.ContainsKey(netId))
             {
                 playerNpcList.Add(netId, npcHandle);
@@ -61,26 +52,23 @@ namespace p5r.code.multiplayerclient.Components
         public void MP_REMOVE_PLAYER(int netId)
         {
             if (!playerNpcList.ContainsKey(netId))
-            {
                 return;
-            }
-            NPC_DESPAWN(playerNpcList[netId]);
+            if (PC_GET_HANDLE() != -1)
+                NPC_DESPAWN(playerNpcList[netId]);
             playerNpcList.Remove(netId);
         }
         public void MP_SYNC_PLAYER_POS(int netid, float[] pos)
         {
             if (!_p5rLib.FlowCaller.Ready())
-            {
                 return;
-            }
             if (!playerNpcList.ContainsKey(netid) || playerNpcList[netid] == -1)
-            {
                 MP_SPAWN_PLAYER(netid);
-            }
             NPC_SET_POS(playerNpcList[netid], pos);
         }
         public void MP_SYNC_PLAYER_ROT(int netid, float[] rot)
         {
+            if (!_p5rLib.FlowCaller.Ready())
+                return;
             if (!playerNpcList.ContainsKey(netid) || playerNpcList[netid] == -1)
             {
                 MP_SPAWN_PLAYER(netid);
@@ -158,6 +146,12 @@ namespace p5r.code.multiplayerclient.Components
             if (!_p5rLib.FlowCaller.Ready())
                 return -1;
             return _p5rLib.FlowCaller.FLD_GET_BKUP_FIELD_TYPE();
+        }
+        public int FLD_GET_BATTLE_RESULT()
+        {
+            if (!_p5rLib.FlowCaller.Ready())
+                return 0;
+            return _p5rLib.FlowCaller.FLD_GET_BATTLE_RESULT();
         }
         static int[] DefaultModel = new int[3] { 1, 1, 0 };
         public int[] PC_GET_MODEL(int pcHandle)

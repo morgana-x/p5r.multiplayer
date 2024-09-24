@@ -186,7 +186,7 @@ namespace p5r.code.multiplayerclient.Components
             Thread.Sleep(100);
             while (running)
             {
-                Thread.Sleep(50);
+                Thread.Sleep(10);
                 if (PacketConnectionHandler.ClosedConnectionToServer)
                 {
                     break;
@@ -310,7 +310,6 @@ namespace p5r.code.multiplayerclient.Components
                 NetworkedPlayer player = getPlayer(id);
                 player.Position = new float[3] { BitConverter.ToSingle(packet.Arguments[1]), BitConverter.ToSingle(packet.Arguments[2]), BitConverter.ToSingle(packet.Arguments[3]) };
                 player.RefreshPosition = true;
-                //_npcManager.MP_SYNC_PLAYER_POS(id, new float[3] { BitConverter.ToSingle(packet.Arguments[1]), BitConverter.ToSingle(packet.Arguments[2]), BitConverter.ToSingle(packet.Arguments[3]) });
                 return;
             }
 
@@ -320,23 +319,15 @@ namespace p5r.code.multiplayerclient.Components
                 NetworkedPlayer player = getPlayer(id);
                 player.Rotation = new float[3] { BitConverter.ToSingle(packet.Arguments[1]), BitConverter.ToSingle(packet.Arguments[2]), BitConverter.ToSingle(packet.Arguments[3]) };
                 player.RefreshRotation = true;
-                //_npcManager.MP_SYNC_PLAYER_ROT(id, new float[3] { BitConverter.ToSingle(packet.Arguments[1]), BitConverter.ToSingle(packet.Arguments[2]), BitConverter.ToSingle(packet.Arguments[3]) });
                 return;
             }
             if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_CONNECT)
             {
                 int id = BitConverter.ToInt32(packet.Arguments[0]);
-                //_npcManager.MP_SPAWN_PLAYER(id);
                 AddPlayer(id);
                 _logger.WriteLine($"Player {id} conneceted!");
                 return;
             }
-            /*if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_REMOVE)
-            {
-                int id = BitConverter.ToInt32(packet.Arguments[0]);
-                _npcManager.MP_REMOVE_PLAYER(id);
-                return;
-            }*/
             if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_DISCONNECT)
             {
                 int id = BitConverter.ToInt32(packet.Arguments[0]);
@@ -360,9 +351,11 @@ namespace p5r.code.multiplayerclient.Components
                 int field_major = BitConverter.ToInt32(packet.Arguments[1]);
                 int field_minor = BitConverter.ToInt32(packet.Arguments[2]);
                 int field_posindex = BitConverter.ToInt32(packet.Arguments[3]);
-                //_npcManager.MP_PLAYER_SET_FIELD(id, new int[] { field_major, field_minor });
                 NetworkedPlayer player = getPlayer(id);
-                player.Field = new int[] {field_major, field_minor, field_posindex };
+                int[] newfield = new int[] { field_major, field_minor, field_posindex };
+                if (player.Field.SequenceEqual(newfield))
+                    return;
+                player.Field = newfield;
                 player.RefreshField = true;
                 _logger.WriteLine($"{player.Name}({id})'s field set to {string.Join("_", player.Field)}.");
                 return;
@@ -415,7 +408,6 @@ namespace p5r.code.multiplayerclient.Components
             {
                 packetsQueue.Add(packet);
             }
-           // packetsQueue.Add(packet);
         }
 
     }

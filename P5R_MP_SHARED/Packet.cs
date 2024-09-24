@@ -19,7 +19,6 @@ namespace Shared
             PACKET_PLAYER_ASSIGNID,
             PACKET_PLAYER_CONNECT,
             PACKET_PLAYER_DISCONNECT,
-            PACKET_PLAYER_REMOVE,
 
             PACKET_PLAYER_MESSAGE,
             PACKET_PLAYER_NAME,
@@ -38,8 +37,6 @@ namespace Shared
             [P5_PACKET.PACKET_PLAYER_CONNECT] = new int[] { 4 },
 
             [P5_PACKET.PACKET_PLAYER_DISCONNECT] = new int[] { 4 },
-
-            //[P5_PACKET.PACKET_PLAYER_REMOVE] = new int[] { 4 },
 
             [P5_PACKET.PACKET_PLAYER_POSITION] = new int[] { 4, 4, 4, 4 },
 

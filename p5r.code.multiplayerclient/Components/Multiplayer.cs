@@ -53,8 +53,6 @@ namespace p5r.code.multiplayerclient.Components
             if (PacketConnectionHandler != null)
                 PacketConnectionHandler.Cleanup();
             PacketConnectionHandler = null;
-
-            reliablePacketsUnconfirmed.Clear();
         }
         public void Disconnect()
         {
@@ -150,7 +148,7 @@ namespace p5r.code.multiplayerclient.Components
             if (newAnimation != lastAnimation)
             {
                 lastAnimation = newAnimation;
-                Client.Send(Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_ANIMATION, new List<byte[]>()
+                Client.SendAsync(Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_ANIMATION, new List<byte[]>()
                     {
                         BitConverter.GetBytes(clientPlayerId),
                         BitConverter.GetBytes(newAnimation),
@@ -160,7 +158,7 @@ namespace p5r.code.multiplayerclient.Components
             if (!lastPos.SequenceEqual(newPos))
             {
                 lastPos = newPos;
-                Client.Send(Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_POSITION, new List<byte[]>()
+                Client.SendAsync(Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_POSITION, new List<byte[]>()
                     {
                         BitConverter.GetBytes(clientPlayerId),
                         BitConverter.GetBytes(newPos[0]),
@@ -172,7 +170,7 @@ namespace p5r.code.multiplayerclient.Components
             if (!lastRot.SequenceEqual(newRot))
             {
                 lastRot = newRot;
-                Client.Send(Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_ROTATION, new List<byte[]>()
+                Client.SendAsync(Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_ROTATION, new List<byte[]>()
                     {
                         BitConverter.GetBytes(clientPlayerId),
                         BitConverter.GetBytes(newRot[0]),
@@ -225,26 +223,6 @@ namespace p5r.code.multiplayerclient.Components
             {
                 packetsQueue.Remove(packet);
             }
-
-
-            //  Check if reliable packets that we sent were received or timedout, and try to send again if so
-           /* List<short> reliablepacketsToRemove = new List<short>();
-            foreach (var pair in reliablePacketsUnconfirmed)
-            {
-                if (DateTime.Now.Subtract(pair.Value.time).TotalMilliseconds > 500)
-                {
-                    reliablepacketsToRemove.Add(pair.Key);
-                    continue;
-                }
-                if (DateTime.Now.Subtract(pair.Value.time).Milliseconds>100)
-                {
-                    Client.Send(pair.Value.packet);
-                }
-            }
-            foreach(var packet in reliablepacketsToRemove)
-            {
-                reliablepacketsToRemove.Remove(packet);
-            }*/
         }
         private void AddPlayer(int netId)
         {
@@ -271,32 +249,10 @@ namespace p5r.code.multiplayerclient.Components
             }
             return PlayerList[netId];
         }
-        private class reliablePacket
-        {
-            public DateTime time;
-            public byte[] packet;
-        }
 
-        Dictionary<short, reliablePacket> reliablePacketsUnconfirmed = new Dictionary<short, reliablePacket>();
-        private short getUniqueReliablePacketId()
+        private void SendReliablePacket(Packet.P5_PACKET type, List<byte[]> args)
         {
-            short id = 0;
-            for (short i = 0; i < 1000; i++)
-            {
-                if (!reliablePacketsUnconfirmed.ContainsKey(i))
-                {
-                    id = i;
-                    break;
-                }
-            }
-            return id;
-        }
-        private void SendReliablePacket(Packet.P5_PACKET type, List<byte[]> data)
-        {
-            short packetId = getUniqueReliablePacketId();
-            byte[] packetData = Packet.FormatPacket((int)type, data, getUniqueReliablePacketId());
-            //reliablePacketsUnconfirmed.Add(packetId, new reliablePacket() { packet = packetData, time = DateTime.Now});
-            Client.Send(packetData);
+            PacketConnectionHandler.SendReliablePacket(type, args);
         }
 
         private void UpdatePlayerPositions()
@@ -335,11 +291,6 @@ namespace p5r.code.multiplayerclient.Components
         }
         private void HandlePacket(Packet packet)
         {
-            if (packet.IsReliable())
-            {
-                Console.WriteLine("Packet is reliable!");
-                Client.Send(Packet.FormatPacket(Packet.P5_PACKET.PACKET_CONFIRM_RECEIVE, new List<byte[]> { BitConverter.GetBytes(packet.ReliableId) }));
-            }
             if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_ASSIGNID)
             {
                 clientPlayerId = BitConverter.ToInt32(packet.Arguments[0]);
@@ -432,7 +383,7 @@ namespace p5r.code.multiplayerclient.Components
         }
         private void HandlePacketReceived(object sender, PacketReceivedArgs args)
         {
-            Packet packet = Packet.ParsePacket(args.Data);
+            Packet packet = args.Packet;
             if (packet == null)
             {
                 Console.WriteLine("Error parsing packet!");
@@ -446,8 +397,6 @@ namespace p5r.code.multiplayerclient.Components
             }
             if (packet.Id == Packet.P5_PACKET.PACKET_CONFIRM_RECEIVE)
             {
-                short id = BitConverter.ToInt16(packet.Arguments[0]);
-                // Todo: Add reliable packet logic here!
                 return;
             }
             try

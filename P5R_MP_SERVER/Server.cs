@@ -22,41 +22,48 @@ namespace P5R_MP_SERVER
         }
         private void NetworkPlayerEntity(NetworkedPlayer player, NetworkedPlayer target)
         {
-            byte[] posData = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_POSITION, new List<byte[]> {
+            target.SendReliablePacket(packetConnection, Packet.P5_PACKET.PACKET_PLAYER_POSITION, new List<byte[]> {
                                 BitConverter.GetBytes(player.Id),
                                 BitConverter.GetBytes(player.Position[0]),
                                 BitConverter.GetBytes(player.Position[1]),
                                 BitConverter.GetBytes(player.Position[2])
                             });
-            byte[] rotData = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_ROTATION, new List<byte[]> {
+            target.SendReliablePacket(packetConnection, Packet.P5_PACKET.PACKET_PLAYER_ROTATION, new List<byte[]> {
                                 BitConverter.GetBytes(player.Id),
                                 BitConverter.GetBytes(player.Rotation[0]),
                                 BitConverter.GetBytes(player.Rotation[1]),
                                 BitConverter.GetBytes(player.Rotation[2])
                             });
-            byte[] modelData = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_MODEL, new List<byte[]> {
+            target.SendReliablePacket(packetConnection, Packet.P5_PACKET.PACKET_PLAYER_MODEL, new List<byte[]> {
                                 BitConverter.GetBytes(player.Id),
                                 BitConverter.GetBytes(player.Model),
                             });
-            target.SendBytes(udpServer, modelData);
-            target.SendBytes(udpServer, posData);
-            target.SendBytes(udpServer, rotData);
         }
         private void NetworkPlayerInfo(NetworkedPlayer player, NetworkedPlayer target)
         {
             byte[] nameBytes = Encoding.UTF8.GetBytes(player.Name);
-            byte[] nameData = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_NAME, new List<byte[]> {
+            target.SendReliablePacket(packetConnection, Packet.P5_PACKET.PACKET_PLAYER_NAME, new List<byte[]> {
                                 BitConverter.GetBytes(player.Id),
                                 BitConverter.GetBytes(nameBytes.Length),
                                 nameBytes
                             });
-            byte[] fieldData = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_FIELD, new List<byte[]> {
+            target.SendReliablePacket(packetConnection, Packet.P5_PACKET.PACKET_PLAYER_FIELD, new List<byte[]> {
                         BitConverter.GetBytes(player.Id),
                         BitConverter.GetBytes(player.Field[0]),
                         BitConverter.GetBytes(player.Field[1]),
                     });
-            target.SendBytes(udpServer, nameData);
-            target.SendBytes(udpServer, fieldData);
+            target.SendReliablePacket(packetConnection, Packet.P5_PACKET.PACKET_PLAYER_FIELD, new List<byte[]> {
+                        BitConverter.GetBytes(player.Id),
+                        BitConverter.GetBytes(player.Field[0]),
+                        BitConverter.GetBytes(player.Field[1]),
+                    });
+        }
+
+        public void SendReliablePacket(NetworkedPlayer receiver, Packet.P5_PACKET type, List<byte[]> args)
+        {
+            if (receiver.EndPoint == null)
+                return;
+            packetConnection.SendReliablePacket(type, args, receiver.EndPoint);
         }
         public void Tick()
         {
@@ -118,16 +125,16 @@ namespace P5R_MP_SERVER
                 if (pl.RefreshField)
                 {
                     pl.RefreshField = false;
-                    byte[] data = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_FIELD, new List<byte[]> {
-                        BitConverter.GetBytes(pl.Id),
-                        BitConverter.GetBytes(pl.Field[0]),
-                        BitConverter.GetBytes(pl.Field[1]),
-                        BitConverter.GetBytes(pl.Field[2]),
-                    });
                     foreach (NetworkedPlayer p in PlayerList)
                     {
                         if (p.Id == pl.Id)
                             continue;
+                        p.SendReliablePacket( packetConnection, Packet.P5_PACKET.PACKET_PLAYER_FIELD, new List<byte[]> {
+                            BitConverter.GetBytes(pl.Id),
+                            BitConverter.GetBytes(pl.Field[0]),
+                            BitConverter.GetBytes(pl.Field[1]),
+                            BitConverter.GetBytes(pl.Field[2]),
+                        });
                         if (IsInSameField(p, pl))
                         {
                             NetworkPlayerEntity(p, pl);
@@ -135,9 +142,8 @@ namespace P5R_MP_SERVER
                         }
                         else
                         {
-                            p.SendBytes(udpServer,removePlayerData);
+                            p.SendBytes(udpServer, removePlayerData);
                         }
-                        p.SendBytes(udpServer, data);
                     }
                 }
                 if (pl.RefreshModel)
@@ -219,42 +225,27 @@ namespace P5R_MP_SERVER
         }
         public void HandlePacketReceived(object sender, PacketReceivedArgs args)
         {
-            if (args.Data.Length < 1)
+            if (args.RawData.Length < 1)
                 return;
-
-            HandlePlayerPacket(args.Endpoint, args.Data);
+            HandlePlayerPacket(args.Endpoint, args.Packet);
         }
 
-        public void HandlePlayerPacket(IPEndPoint endPoint, byte[] data)
+        public void HandlePlayerPacket(IPEndPoint endPoint, Packet packet)
         {
-            if (data.Length < 1)
+            if (packet == null || packet.Id == null)
                 return;
-
             if (!IpAddressMap.ContainsKey(endPoint))
-            {
-                Console.WriteLine("Unverified player cannot handle packet!");
                 HandlePlayerConnection(endPoint);
-            }
+
             int pId = IpAddressMap[endPoint];
 
             NetworkedPlayer player = getPlayerFromId(pId);
             if (player == null)
                 return;
-
-            Packet packet = Packet.ParsePacket(data);
-            if (packet == null || packet.Id == null)
-            {
-                return;
-            }
             if (packet.Id == Packet.P5_PACKET.PACKET_NONE || packet.Id == Packet.P5_PACKET.PACKET_HEARTBEAT)
-            {
                 return;
-            }
-            if (packet.IsReliable())
-            {
-                Console.WriteLine("Packet is reliable!");
-                player.SendBytes(udpServer, Packet.FormatPacket(Packet.P5_PACKET.PACKET_CONFIRM_RECEIVE, new List<byte[]> { BitConverter.GetBytes(packet.ReliableId) }));
-            }
+
+           
             if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_FIELD)
             {
                 player.Field = new int[] { BitConverter.ToInt32(packet.Arguments[1]), BitConverter.ToInt32(packet.Arguments[2]), BitConverter.ToInt32(packet.Arguments[3]) };
@@ -359,20 +350,6 @@ namespace P5R_MP_SERVER
         {
             HandlePlayerConnection(args.Endpoint);
         }
-
-        private static string getIpAddress()
-        {
-            var host = Dns.GetHostEntry(Dns.GetHostName());
-
-            foreach (IPAddress ip in host.AddressList)
-            {
-                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-                {
-                    return ip.ToString();
-                }
-            }
-            return string.Empty;
-        }
         public Server(int port = 11000)
         {
             udpServer = new UdpClient(port);
@@ -380,15 +357,6 @@ namespace P5R_MP_SERVER
             packetConnection.OnPacketReceived += HandlePacketReceived;
             packetConnection.OnClientDisconnect += HandleClientDisconnect;
             packetConnection.OnClientConnect += HandleClientConnect;
-            Console.ForegroundColor = ConsoleColor.Gray;
-            Console.Write($"Started Server at ");
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.Write($"{getIpAddress()}");
-            Console.ForegroundColor = ConsoleColor.Gray;
-            Console.Write(":");
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.Write($"{port}\n");
-            Console.ForegroundColor = ConsoleColor.Gray;
         }
     }
 }

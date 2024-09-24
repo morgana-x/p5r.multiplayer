@@ -26,10 +26,30 @@ namespace Shared
         public IPAddress IpAddress;
 
         public IPEndPoint EndPoint;
-        public void SendBytes(UdpClient sender, byte[] data )
+        public void SendBytes(UdpClient sender, byte[] data, bool syncronous = false)
         {
-            sender.Send(data, data.Length,this.EndPoint);
+            if (syncronous)
+            {
+                sender.Send(data, data.Length, this.EndPoint);
+                return;
+            }
+            sender.SendAsync(data, data.Length,this.EndPoint);
         }
-       
+        public void SendPacket(UdpClient sender, Packet.P5_PACKET type, List<byte[]> args)
+        {
+            byte[] packetData = Packet.FormatPacket(type, args);
+            sender.SendAsync(packetData, packetData.Length, this.EndPoint);
+        }
+        public void SendReliablePacket(PacketConnection connection, Packet.P5_PACKET type, List<byte[]> args)
+        {
+            connection.SendReliablePacket(type, args, this.EndPoint);
+        }
+        /*public void SendReliableBytes( PacketConnection connection, byte[] packetData)
+        {
+            if (this.EndPoint == null)
+                return;
+            connection.SendReliablePacketBytes(packetData, this.EndPoint);
+        }*/
+
     }
 }

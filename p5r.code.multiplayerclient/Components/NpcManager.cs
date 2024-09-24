@@ -29,11 +29,7 @@ namespace p5r.code.multiplayerclient.Components
 
         private void OnFieldChange()
         {
-            List<int> ids = playerNpcList.Keys.ToList();
-            foreach (var a in ids)
-            {
-                MP_REMOVE_PLAYER(a);
-            }
+            playerNpcList.Clear();
             
             foreach(var pair in multiplayer.PlayerList)
             {

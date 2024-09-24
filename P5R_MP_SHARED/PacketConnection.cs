@@ -204,45 +204,52 @@ namespace Shared
 
         private void checkReliablePacketTimeout()
         {
-            List<short> ignorePacketsToBeRemoved = new List<short>();
-            foreach (var a in receivedConfirmedPacketsToIgnore)
+            try
             {
-                if (DateTime.Now > a.Value)
-                    ignorePacketsToBeRemoved.Add(a.Key);
-            }
-            foreach (var a in ignorePacketsToBeRemoved)
-                receivedConfirmedPacketsToIgnore.Remove(a);
+                List<short> ignorePacketsToBeRemoved = new List<short>();
+                foreach (var a in receivedConfirmedPacketsToIgnore)
+                {
+                    if (DateTime.Now > a.Value)
+                        ignorePacketsToBeRemoved.Add(a.Key);
+                }
+                foreach (var a in ignorePacketsToBeRemoved)
+                    receivedConfirmedPacketsToIgnore.Remove(a);
 
-            bool send = false;
-            if (DateTime.Now > nextReliablePacketSend)
-            {
-                send = true;
-                nextReliablePacketSend = DateTime.Now.AddMilliseconds(250);
-            }
-            foreach (var a in reliablePacketsUnconfirmed)
-            {
-                if (DateTime.Now.Subtract(a.Value.time).TotalMilliseconds > 2000)
+                bool send = false;
+                if (DateTime.Now > nextReliablePacketSend)
                 {
-                    Console.WriteLine("Reliable packet timed out " + a.Key);
-                    if (!reliablepacketsConfirmedOrTimedOut.Contains(a.Key))
-                        reliablepacketsConfirmedOrTimedOut.Add(a.Key);
-                    continue;
+                    send = true;
+                    nextReliablePacketSend = DateTime.Now.AddMilliseconds(250);
                 }
-                if (send)
+                foreach (var a in reliablePacketsUnconfirmed)
                 {
-                    if (a.Value.remoteEndPoint != null)
-                        LocalUdpClient.SendAsync(a.Value.packet, a.Value.packet.Length, a.Value.remoteEndPoint);
-                    else
-                        LocalUdpClient.SendAsync(a.Value.packet);
-                    Console.WriteLine("Sent reliable packet again " + a.Key);
+                    if (DateTime.Now.Subtract(a.Value.time).TotalMilliseconds > 2000)
+                    {
+                        Console.WriteLine("Reliable packet timed out " + a.Key);
+                        if (!reliablepacketsConfirmedOrTimedOut.Contains(a.Key))
+                            reliablepacketsConfirmedOrTimedOut.Add(a.Key);
+                        continue;
+                    }
+                    if (send)
+                    {
+                        if (a.Value.remoteEndPoint != null)
+                            LocalUdpClient.SendAsync(a.Value.packet, a.Value.packet.Length, a.Value.remoteEndPoint);
+                        else
+                            LocalUdpClient.SendAsync(a.Value.packet);
+                        Console.WriteLine("Sent reliable packet again " + a.Key);
+                    }
                 }
+                foreach (var a in reliablepacketsConfirmedOrTimedOut)
+                {
+                    if (reliablePacketsUnconfirmed.ContainsKey(a))
+                        reliablePacketsUnconfirmed.Remove(a);
+                }
+                reliablepacketsConfirmedOrTimedOut.Clear();
             }
-            foreach (var a in reliablepacketsConfirmedOrTimedOut)
+            catch(Exception e)
             {
-                if (reliablePacketsUnconfirmed.ContainsKey(a))
-                    reliablePacketsUnconfirmed.Remove(a);
+                Console.WriteLine(e.ToString());
             }
-            reliablepacketsConfirmedOrTimedOut.Clear();
         }
         private void PreProcessPacket(Packet packet, IPEndPoint sender=null)
         {

@@ -7,8 +7,7 @@ using System.Diagnostics;
 using P5R_MP_SERVER;
 using p5r.code.multiplayerclient.Configuration;
 using System.Text;
-using System.Numerics;
-using System.Reflection;
+using p5rpc.lib.interfaces;
 
 
 namespace p5r.code.multiplayerclient.Components
@@ -32,9 +31,9 @@ namespace p5r.code.multiplayerclient.Components
         Thread tickThread;
 
         public Dictionary<int, NetworkedPlayer> PlayerList = new Dictionary<int,NetworkedPlayer>();
-        public Multiplayer(NpcManager npcManager, ILogger logger, Config config)
+        public Multiplayer(IP5RLib lib, ILogger logger, Config config)
         {
-            _npcManager = npcManager;
+            _npcManager = new NpcManager(lib, logger, this);
             _logger = logger;
             _config = config;
             Client = new UdpClient();
@@ -126,6 +125,7 @@ namespace p5r.code.multiplayerclient.Components
                         BitConverter.GetBytes(_npcManager.CurrentField[0]),
                         BitConverter.GetBytes(_npcManager.CurrentField[1]),
                     });
+                return;
             }
             if (_npcManager.CurrentField[0] == -1 && _npcManager.CurrentField[1] == -1)
                 return;
@@ -145,30 +145,7 @@ namespace p5r.code.multiplayerclient.Components
                         BitConverter.GetBytes(clientPlayerId),
                         BitConverter.GetBytes(modelId),
                     });
-            }
-            float[] newPos = _npcManager.PC_GET_POS(pcHandle);
-            float[] newRot = _npcManager.PC_GET_ROT(pcHandle);
-            if (!lastPos.SequenceEqual(newPos))
-            {
-                lastPos = newPos;
-                Client.Send(Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_POSITION, new List<byte[]>()
-                    {
-                        BitConverter.GetBytes(clientPlayerId),
-                        BitConverter.GetBytes(newPos[0]),
-                        BitConverter.GetBytes(newPos[1]),
-                        BitConverter.GetBytes(newPos[2]),
-                    }));
-            }
-            if (!lastRot.SequenceEqual(newRot))
-            {
-                lastRot = newRot;
-                Client.Send(Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_ROTATION, new List<byte[]>()
-                    {
-                        BitConverter.GetBytes(clientPlayerId),
-                        BitConverter.GetBytes(newRot[0]),
-                        BitConverter.GetBytes(newRot[1]),
-                        BitConverter.GetBytes(newRot[2]),
-                    }));
+                return;
             }
             int newAnimation = _npcManager.PC_GET_ANIM(pcHandle);
             if (newAnimation != lastAnimation)
@@ -180,6 +157,31 @@ namespace p5r.code.multiplayerclient.Components
                         BitConverter.GetBytes(newAnimation),
                     }));
             }
+            float[] newPos = _npcManager.PC_GET_POS(pcHandle);
+            if (!lastPos.SequenceEqual(newPos))
+            {
+                lastPos = newPos;
+                Client.Send(Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_POSITION, new List<byte[]>()
+                    {
+                        BitConverter.GetBytes(clientPlayerId),
+                        BitConverter.GetBytes(newPos[0]),
+                        BitConverter.GetBytes(newPos[1]),
+                        BitConverter.GetBytes(newPos[2]),
+                    }));
+            }
+            float[] newRot = _npcManager.PC_GET_ROT(pcHandle);
+            if (!lastRot.SequenceEqual(newRot))
+            {
+                lastRot = newRot;
+                Client.Send(Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_ROTATION, new List<byte[]>()
+                    {
+                        BitConverter.GetBytes(clientPlayerId),
+                        BitConverter.GetBytes(newRot[0]),
+                        BitConverter.GetBytes(newRot[1]),
+                        BitConverter.GetBytes(newRot[2]),
+                    }));
+            }
+
         }
  
         private void TickTask()
@@ -262,7 +264,7 @@ namespace p5r.code.multiplayerclient.Components
             }
             _npcManager.MP_REMOVE_PLAYER(netId);
         }
-        private NetworkedPlayer getPlayer(int netId)
+        public NetworkedPlayer getPlayer(int netId)
         {
             if (!PlayerList.ContainsKey(netId))
             {

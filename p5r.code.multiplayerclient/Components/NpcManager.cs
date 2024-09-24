@@ -1,5 +1,7 @@
-﻿using p5rpc.lib.interfaces;
+﻿using P5R_MP_SERVER;
+using p5rpc.lib.interfaces;
 using Reloaded.Mod.Interfaces;
+using Shared;
 
 namespace p5r.code.multiplayerclient.Components
 {
@@ -9,20 +11,39 @@ namespace p5r.code.multiplayerclient.Components
 
         ILogger _logger;
 
+        Multiplayer multiplayer;
+
         // Should used NetworkedPlayer class here but I'm lazy af
         // Also like a neat small dictionary anyway (Don't currently have support for networking names / steamids and other junk)
 
         public Dictionary<int, int> playerNpcList = new Dictionary<int, int>();
 
         public int[] CurrentField = new int[] { 0, 0 };
-        public NpcManager(IP5RLib p5rlib, ILogger logger)
+        public NpcManager(IP5RLib p5rlib, ILogger logger, Multiplayer multiplayer)
         {
             _p5rLib = p5rlib;
             _logger = logger;
+            this.multiplayer = multiplayer;
         }
 
         private void OnFieldChange()
         {
+            List<int> ids = playerNpcList.Keys.ToList();
+            foreach (var a in ids)
+            {
+                if (!playerNpcList.ContainsKey(a))
+                    continue;
+                MP_REMOVE_PLAYER(a);
+            }
+            foreach(var pair in multiplayer.PlayerList)
+            {
+                if (pair.Value.Field.SequenceEqual(CurrentField))
+                {
+                    pair.Value.RefreshModel = true;
+                    pair.Value.RefreshPosition = true;
+                    pair.Value.RefreshRotation = true;
+                }
+            }
             playerNpcList.Clear();
         }
         public void MP_PLAYER_SET_FIELD(int netId, int[] field)
@@ -61,7 +82,9 @@ namespace p5r.code.multiplayerclient.Components
             if (!_p5rLib.FlowCaller.Ready())
                 return;
             if (!playerNpcList.ContainsKey(netid) || playerNpcList[netid] == -1)
+            {
                 MP_SPAWN_PLAYER(netid);
+            }
             NPC_SET_POS(playerNpcList[netid], pos);
         }
         public void MP_SYNC_PLAYER_ROT(int netid, float[] rot)
@@ -80,25 +103,18 @@ namespace p5r.code.multiplayerclient.Components
             MP_SPAWN_PLAYER(netId, modelIdMajor, modelIdMinor, modelIdSub);
         }
 
-        public void MP_SYNC_PLAYER_ANIMATION(int netid, int animationId, int shouldLoop = -1)// int gNpcAnimGapIndex, int gNpcAnimGapMinorId, int gNpcAnimShouldLoop)
+        public void MP_SYNC_PLAYER_ANIMATION(int netid, int animationId, int shouldLoop = -1)
         {
             if (!playerNpcList.ContainsKey(netid) || playerNpcList[netid] == -1)
-            {
                 MP_SPAWN_PLAYER(netid);
-            }
             if (shouldLoop == -1)
-            {
                 shouldLoop = 1;
-            }
             NPC_SET_ANIM(playerNpcList[netid], animationId, shouldLoop);
-            //NPC_SET_ANIM(playerNpcList[netid], gNpcAnimGapIndex, gNpcAnimGapMinorId, gNpcAnimShouldLoop);
         }
         public int[] GET_FIELD()
         {
             if (!_p5rLib.FlowCaller.Ready())
-            {
-                return new int[2] { 0, 0 };
-            }
+                return new int[2] { -1, -1 };
             int fieldMajor = _p5rLib.FlowCaller.FLD_GET_MAJOR();
             int fieldMinor = _p5rLib.FlowCaller.FLD_GET_MINOR();
 
@@ -107,9 +123,7 @@ namespace p5r.code.multiplayerclient.Components
         public float[] PC_GET_POS(int pcHandle)
         {
             if (!_p5rLib.FlowCaller.Ready())
-            {
                 return new float[3] { 0, 0, 0 };
-            }
             float x = _p5rLib.FlowCaller.FLD_MODEL_GET_X_TRANSLATE(pcHandle);
             float y = _p5rLib.FlowCaller.FLD_MODEL_GET_Y_TRANSLATE(pcHandle);
             float z = _p5rLib.FlowCaller.FLD_MODEL_GET_Z_TRANSLATE(pcHandle);
@@ -119,9 +133,7 @@ namespace p5r.code.multiplayerclient.Components
         public float[] PC_GET_ROT(int pcHandle)
         {
             if (!_p5rLib.FlowCaller.Ready())
-            {
                 return new float[3] { 0, 0, 0 };
-            }
             float xr = _p5rLib.FlowCaller.FLD_MODEL_GET_X_ROTATE(pcHandle);
             float yr = _p5rLib.FlowCaller.FLD_MODEL_GET_Y_ROTATE(pcHandle);
             float zr = _p5rLib.FlowCaller.FLD_MODEL_GET_Z_ROTATE(pcHandle);
@@ -222,22 +234,37 @@ namespace p5r.code.multiplayerclient.Components
             int anim = _p5rLib.FlowCaller.MDL_GET_ANIM(npcHandle);
             return anim;
         }
+        int lastFieldHandle = -1;
+
+        private bool field_check_reload()
+        {
+            if (!_p5rLib.FlowCaller.Ready())
+                return false;
+            int newFieldHandle = _p5rLib.FlowCaller.FLD_GET_POS_INDEX(); //_p5rLib.FlowCaller.FLD_GET_QR_ID();
+            if (newFieldHandle != lastFieldHandle)
+            {
+                lastFieldHandle = newFieldHandle;
+                OnFieldChange();
+            }
+            return newFieldHandle != lastFieldHandle;
+        }
         public bool FIELD_CHECK_CHANGE()
         {
             if (!_p5rLib.FlowCaller.Ready())
                 return false;
+
             int fieldMajor = _p5rLib.FlowCaller.FLD_GET_MAJOR();
             int fieldMinor = _p5rLib.FlowCaller.FLD_GET_MINOR();
             int[] newField = new int[] { fieldMajor, fieldMinor };
 
-            bool changed = false;
-            if (!newField.SequenceEqual(CurrentField))
+            if (newField.SequenceEqual(CurrentField))
             {
-                OnFieldChange();
-                changed = true;
+                field_check_reload();
+                return false;
             }
+            OnFieldChange();
             CurrentField = newField;
-            return changed;
+            return true;
         }
 
      

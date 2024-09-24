@@ -52,11 +52,6 @@ namespace P5R_MP_SERVER
                         BitConverter.GetBytes(player.Field[0]),
                         BitConverter.GetBytes(player.Field[1]),
                     });
-            target.SendReliablePacket(packetConnection, Packet.P5_PACKET.PACKET_PLAYER_FIELD, new List<byte[]> {
-                        BitConverter.GetBytes(player.Id),
-                        BitConverter.GetBytes(player.Field[0]),
-                        BitConverter.GetBytes(player.Field[1]),
-                    });
         }
 
         public void SendReliablePacket(NetworkedPlayer receiver, Packet.P5_PACKET type, List<byte[]> args)
@@ -111,9 +106,7 @@ namespace P5R_MP_SERVER
                         if (p.Id == pl.Id)
                             continue;
                         if (!IsInSameField(p, pl))
-                        {
                             continue;
-                        }
                         p.SendBytes(udpServer, data);
                     }
 
@@ -126,12 +119,12 @@ namespace P5R_MP_SERVER
                     {
                         if (p.Id == pl.Id)
                             continue;
-                        p.SendReliablePacket( packetConnection, Packet.P5_PACKET.PACKET_PLAYER_FIELD, new List<byte[]> {
-                            BitConverter.GetBytes(pl.Id),
-                            BitConverter.GetBytes(pl.Field[0]),
-                            BitConverter.GetBytes(pl.Field[1]),
-                            BitConverter.GetBytes(pl.Field[2]),
-                        });
+                        p.SendReliablePacket(packetConnection, Packet.P5_PACKET.PACKET_PLAYER_FIELD, new List<byte[]> {
+                                BitConverter.GetBytes(pl.Id),
+                                BitConverter.GetBytes(pl.Field[0]),
+                                BitConverter.GetBytes(pl.Field[1]),
+                                BitConverter.GetBytes(pl.Field[2]),
+                            });
                         if (IsInSameField(p, pl))
                         {
                             NetworkPlayerEntity(p, pl);
@@ -189,7 +182,6 @@ namespace P5R_MP_SERVER
                 if (p.Id == id)
                     return p;
             }
-
             return null;
         }
         public void HandleClientDisconnect(object sender, ClientDisconnectArgs args)
@@ -320,18 +312,16 @@ namespace P5R_MP_SERVER
 
             NetworkedPlayer player = new NetworkedPlayer() { Name = "testname", IpAddress = endPoint.Address, Id = newId, EndPoint = endPoint };
             IpAddressMap.Add(endPoint, player.Id);
-            player.SendBytes(udpServer, Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_ASSIGNID, new List<byte[]> { BitConverter.GetBytes(player.Id) }));
+            player.SendReliablePacket(packetConnection, Packet.P5_PACKET.PACKET_PLAYER_ASSIGNID, new List<byte[]> { BitConverter.GetBytes(player.Id) });
             PlayerList.Add(player);
 
             foreach(NetworkedPlayer pl in PlayerList)
             {
                 if (player.Id == pl.Id)
                     continue;
-                player.SendBytes(udpServer, Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_CONNECT, new List<byte[]> { BitConverter.GetBytes(pl.Id) }));
+                player.SendReliablePacket(packetConnection, Packet.P5_PACKET.PACKET_PLAYER_CONNECT, new List<byte[]> { BitConverter.GetBytes(pl.Id) });
                 NetworkPlayerInfo(pl, player);
                 NetworkPlayerInfo(player, pl);
-                pl.RefreshPosition = true;
-                pl.RefreshRotation = true;
             }
         }
         public void HandleClientConnect(object sender, ClientConnectArgs args)

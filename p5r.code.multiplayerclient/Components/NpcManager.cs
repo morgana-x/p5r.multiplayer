@@ -2,6 +2,7 @@
 using p5rpc.lib.interfaces;
 using Reloaded.Mod.Interfaces;
 using Shared;
+using System.Numerics;
 
 namespace p5r.code.multiplayerclient.Components
 {
@@ -33,7 +34,7 @@ namespace p5r.code.multiplayerclient.Components
             
             foreach(var pair in multiplayer.PlayerList)
             {
-                if (pair.Value.Field.SequenceEqual(CurrentField) && !isLoading())
+                if (pair.Value.Field.SequenceEqual(CurrentField) && !isLoading() && CurrentField[0] != -1 && CurrentField[2] != -1)
                 {
                     pair.Value.RefreshModel = true;
                     pair.Value.RefreshPosition = true;

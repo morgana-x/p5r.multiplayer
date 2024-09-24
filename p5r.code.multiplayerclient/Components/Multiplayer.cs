@@ -259,7 +259,7 @@ namespace p5r.code.multiplayerclient.Components
         {
             foreach (var player in PlayerList.Values)
             {
-                bool isInSameField = _npcManager.CurrentField.SequenceEqual(player.Field);
+                bool isInSameField = _npcManager.CurrentField.SequenceEqual(player.Field) && _npcManager.CurrentField[0] != -1 && _npcManager.CurrentField[2] != -1;
                 if (player.RefreshModel)
                 {
                     player.RefreshModel = false;

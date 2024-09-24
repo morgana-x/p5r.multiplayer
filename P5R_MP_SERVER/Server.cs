@@ -18,7 +18,7 @@ namespace P5R_MP_SERVER
 
         public bool IsInSameField(NetworkedPlayer p1, NetworkedPlayer p2)
         {
-            return p1.Field.SequenceEqual(p2.Field) && p1.Field[0] != -1;
+            return p1.Field.SequenceEqual(p2.Field) && p1.Field[0] != -1 && p1.Field[2] != -1 ;
         }
         private void NetworkPlayerEntity(NetworkedPlayer player, NetworkedPlayer target)
         {

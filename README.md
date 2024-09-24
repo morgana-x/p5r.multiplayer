@@ -2,7 +2,6 @@
 A mod that adds multiplayer to Persona 5 Royal. Only intends to sync player characters at this stage.
 ## Todo:
 + Fix crashes when two players load into a battle at the same time in same field (Battles are not intended to be syncable areas)
-+ Fix mod not realising npcs being cleaned up sometimes when field is not changed (EG: Traversing between Leblanc Attic and Cafe) resulting in disappearing player models until field id refresh for missing player
 + Fix player npcs not having Joker's full animation set, resulting in sometimes having an idle animation instead of jump, slide etc
 + Chat system and menu
 + Add reliable packet system for vital information like player models, names, ids etc

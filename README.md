@@ -8,6 +8,7 @@ A mod that adds multiplayer to Persona 5 Royal. Only intends to sync player char
 + Some form of player verification (Steam perhaps)
 + Add commands to server
 + Transition away from using flowscript calls
++ Make server send disconnect packet as reliable packet
 ## Current setup
 + Run the built server executable
 + launch P5R instances via Reloaded-II with the P5R multiplayer mod enabled. Which connect to the server

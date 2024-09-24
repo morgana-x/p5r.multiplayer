@@ -287,6 +287,13 @@ namespace p5r.code.multiplayerclient.Components
                     if (isInSameField)
                         _npcManager.MP_SYNC_PLAYER_ANIMATION(player.Id, player.Animation);
                 }
+                if (player.RefreshField)
+                {
+                    if (!isInSameField)
+                    {
+                        _npcManager.MP_REMOVE_PLAYER(player.Id);
+                    }
+                }
             }
         }
         private void HandlePacket(Packet packet)
@@ -356,6 +363,7 @@ namespace p5r.code.multiplayerclient.Components
                 //_npcManager.MP_PLAYER_SET_FIELD(id, new int[] { field_major, field_minor });
                 NetworkedPlayer player = getPlayer(id);
                 player.Field = new int[] {field_major, field_minor, field_posindex };
+                player.RefreshField = true;
                 _logger.WriteLine($"{player.Name}({id})'s field set to {string.Join("_", player.Field)}.");
                 return;
             }

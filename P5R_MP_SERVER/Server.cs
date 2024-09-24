@@ -140,10 +140,6 @@ namespace P5R_MP_SERVER
                             NetworkPlayerEntity(p, pl);
                             NetworkPlayerEntity(pl, p);
                         }
-                        else
-                        {
-                            p.SendBytes(udpServer, removePlayerData);
-                        }
                     }
                 }
                 if (pl.RefreshModel)
@@ -153,11 +149,6 @@ namespace P5R_MP_SERVER
                     {
                         if (p.Id == pl.Id)
                             continue;
-                        if (!IsInSameField(p, pl))
-                        {
-                            p.SendBytes(udpServer, removePlayerData);
-                            continue;
-                        }
                         NetworkPlayerEntity(pl, p);
                     }
                 }

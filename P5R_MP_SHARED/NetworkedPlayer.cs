@@ -11,7 +11,7 @@ namespace Shared
         public float[] Position = new float[3] { 0, 0, 0 };
         public float[] Rotation = new float[3] { 0, 0, 0 };
 
-        public int[] Field = new int[2] { -1, -1 };
+        public int[] Field = new int[3] { -1, -1, -1 };
 
         public int Model = 0;
 

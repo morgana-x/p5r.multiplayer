@@ -122,6 +122,7 @@ namespace P5R_MP_SERVER
                         BitConverter.GetBytes(pl.Id),
                         BitConverter.GetBytes(pl.Field[0]),
                         BitConverter.GetBytes(pl.Field[1]),
+                        BitConverter.GetBytes(pl.Field[2]),
                     });
                     foreach (NetworkedPlayer p in PlayerList)
                     {
@@ -256,7 +257,7 @@ namespace P5R_MP_SERVER
             }
             if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_FIELD)
             {
-                player.Field = new int[] { BitConverter.ToInt32(packet.Arguments[1]), BitConverter.ToInt32(packet.Arguments[2]) };
+                player.Field = new int[] { BitConverter.ToInt32(packet.Arguments[1]), BitConverter.ToInt32(packet.Arguments[2]), BitConverter.ToInt32(packet.Arguments[3]) };
                 player.RefreshField = true;
                 Console.WriteLine($"{player.Id}'s field set to {string.Join("_", player.Field)}.");
             }

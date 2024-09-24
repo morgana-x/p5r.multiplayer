@@ -124,6 +124,7 @@ namespace p5r.code.multiplayerclient.Components
                         BitConverter.GetBytes(clientPlayerId),
                         BitConverter.GetBytes(_npcManager.CurrentField[0]),
                         BitConverter.GetBytes(_npcManager.CurrentField[1]),
+                        BitConverter.GetBytes(_npcManager.CurrentField[2]),
                     });
                 return;
             }
@@ -131,9 +132,7 @@ namespace p5r.code.multiplayerclient.Components
                 return;
             int pcHandle = _npcManager.PC_GET_HANDLE();
             if (pcHandle == -1)
-            {
                 return;
-            }
             int[] newModel = _npcManager.PC_GET_MODEL(pcHandle);
             if (!lastModel.SequenceEqual(newModel))
             {
@@ -304,26 +303,33 @@ namespace p5r.code.multiplayerclient.Components
         {
             foreach (var player in PlayerList.Values)
             {
+                bool isInSameField = _npcManager.CurrentField.SequenceEqual(player.Field);
                 if (player.RefreshModel)
                 {
                     player.RefreshModel = false;
-                    int[] model = ModelChecker.GetModelFromId(player.Model);
-                    _npcManager.MP_SYNC_PLAYER_MODEL(player.Id, model[0], model[1], model[2]);
+                    if (isInSameField)
+                    {
+                        int[] model = ModelChecker.GetModelFromId(player.Model);
+                        _npcManager.MP_SYNC_PLAYER_MODEL(player.Id, model[0], model[1], model[2]);
+                    }
                 }
                 if (player.RefreshPosition)
                 {
                     player.RefreshPosition = false;
-                    _npcManager.MP_SYNC_PLAYER_POS(player.Id, player.Position);
+                    if (isInSameField)
+                        _npcManager.MP_SYNC_PLAYER_POS(player.Id, player.Position);
                 }
                 if (player.RefreshRotation)
                 {
                     player.RefreshRotation = false;
-                    _npcManager.MP_SYNC_PLAYER_ROT(player.Id, player.Rotation);
+                    if (isInSameField)
+                       _npcManager.MP_SYNC_PLAYER_ROT(player.Id, player.Rotation);
                 }
                 if (player.RefreshAnimation)
                 {
                     player.RefreshAnimation = false;
-                    _npcManager.MP_SYNC_PLAYER_ANIMATION(player.Id, player.Animation);
+                    if (isInSameField)
+                        _npcManager.MP_SYNC_PLAYER_ANIMATION(player.Id, player.Animation);
                 }
             }
         }
@@ -395,10 +401,11 @@ namespace p5r.code.multiplayerclient.Components
                 int id = BitConverter.ToInt32(packet.Arguments[0]);
                 int field_major = BitConverter.ToInt32(packet.Arguments[1]);
                 int field_minor = BitConverter.ToInt32(packet.Arguments[2]);
+                int field_posindex = BitConverter.ToInt32(packet.Arguments[3]);
                 //_npcManager.MP_PLAYER_SET_FIELD(id, new int[] { field_major, field_minor });
                 NetworkedPlayer player = getPlayer(id);
-                player.Field = new int[] {field_major, field_minor};
-                _logger.WriteLine($"{player.Name}({id})'s field set to {string.Join("_", new int[] { field_major, field_minor })}.");
+                player.Field = new int[] {field_major, field_minor, field_posindex };
+                _logger.WriteLine($"{player.Name}({id})'s field set to {string.Join("_", player.Field)}.");
                 return;
             }
             if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_ANIMATION)

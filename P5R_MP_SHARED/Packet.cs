@@ -51,7 +51,7 @@ namespace Shared
 
             [P5_PACKET.PACKET_PLAYER_ASSIGNID] = new int[] { 4 },
 
-            [P5_PACKET.PACKET_PLAYER_FIELD] = new int[] { 4, 4, 4 },
+            [P5_PACKET.PACKET_PLAYER_FIELD] = new int[] { 4, 4, 4, 4},
 
             [P5_PACKET.PACKET_PLAYER_ANIMATION] = new int[] { 4, 4 },
 

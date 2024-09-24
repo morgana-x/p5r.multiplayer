@@ -39,7 +39,7 @@ namespace Shared
 
             [P5_PACKET.PACKET_PLAYER_DISCONNECT] = new int[] { 4 },
 
-            [P5_PACKET.PACKET_PLAYER_REMOVE] = new int[] { 4 },
+            //[P5_PACKET.PACKET_PLAYER_REMOVE] = new int[] { 4 },
 
             [P5_PACKET.PACKET_PLAYER_POSITION] = new int[] { 4, 4, 4, 4 },
 

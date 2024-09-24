@@ -331,12 +331,12 @@ namespace p5r.code.multiplayerclient.Components
                 _logger.WriteLine($"Player {id} conneceted!");
                 return;
             }
-            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_REMOVE)
+            /*if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_REMOVE)
             {
                 int id = BitConverter.ToInt32(packet.Arguments[0]);
                 _npcManager.MP_REMOVE_PLAYER(id);
                 return;
-            }
+            }*/
             if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_DISCONNECT)
             {
                 int id = BitConverter.ToInt32(packet.Arguments[0]);

@@ -78,9 +78,6 @@ namespace P5R_MP_SERVER
             }
             foreach (NetworkedPlayer pl in PlayerList)
             {
-                byte[] removePlayerData = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_REMOVE, new List<byte[]> {
-                        BitConverter.GetBytes(pl.Id),
-                    });
                 if (pl.RefreshPosition)
                 {
                     pl.RefreshPosition = false;

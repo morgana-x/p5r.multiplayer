@@ -9,7 +9,7 @@ A mod that adds multiplayer to Persona 5 Royal. Only intends to sync player char
 ## Current setup
 + Run the built server executable
 + launch P5R instances via Reloaded-II with the P5R multiplayer mod enabled. Which connect to the server
-(Reccomended to have intro skip patch in P5R Essentials, but do not switch on "Render in background" patch!
+(Reccomended to have intro skip patch in P5R Essentials)
 ## Connecting to remote servers
 If you want to connect to remote servers with an ip address that is not localhost:
 + Ensure desired server has port forwarded the port (UDP) it's using

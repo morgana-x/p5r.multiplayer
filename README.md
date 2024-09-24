@@ -1,7 +1,7 @@
 ## P5R MP
 A mod that adds multiplayer to Persona 5 Royal. Only intends to sync player characters at this stage.
 ## Todo:
-+ Fix occasional client crash when 2 or more players load into the same area at once one of them crashes
++ Fix occasional client crash when loading into new area from one containing other players (Something to do with despawning npcs as they're being unloaded perhaps?)
 + Fix player npcs not having Joker's full animation set, resulting in sometimes having an idle animation instead of jump, slide etc
 + Chat system and menu
 + Improve Reliable packet system

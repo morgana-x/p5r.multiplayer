@@ -219,11 +219,11 @@ namespace Shared
                 if (DateTime.Now > nextReliablePacketSend)
                 {
                     send = true;
-                    nextReliablePacketSend = DateTime.Now.AddMilliseconds(250);
+                    nextReliablePacketSend = DateTime.Now.AddMilliseconds(300);
                 }
                 foreach (var a in reliablePacketsUnconfirmed)
                 {
-                    if (DateTime.Now.Subtract(a.Value.time).TotalMilliseconds > 2000)
+                    if (DateTime.Now.Subtract(a.Value.time).TotalMilliseconds > 3000)
                     {
                         Console.WriteLine("Reliable packet timed out " + a.Key);
                         if (!reliablepacketsConfirmedOrTimedOut.Contains(a.Key))

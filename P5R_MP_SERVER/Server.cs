@@ -6,7 +6,7 @@ using static Shared.PacketConnection;
 
 namespace P5R_MP_SERVER
 {
-    internal class Server
+    public class Server
     {
         UdpClient udpServer;
         public PacketConnection packetConnection;
@@ -163,17 +163,20 @@ namespace P5R_MP_SERVER
         }
         private void RemovePlayer(NetworkedPlayer player)
         {
-            byte[] data = Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_DISCONNECT, new List<byte[]> {
-                        BitConverter.GetBytes(player.Id),
-                    });
             foreach (NetworkedPlayer p in PlayerList)
             {
                 if (p.Id == player.Id)
                     continue;
-                p.SendBytes(udpServer, data);
+                p.SendReliablePacket(packetConnection, Packet.P5_PACKET.PACKET_PLAYER_DISCONNECT, new List<byte[]> {
+                        BitConverter.GetBytes(player.Id),
+                });
             }
             PlayerList.Remove(player);
             IpAddressMap.Remove(player.EndPoint);
+        }
+        public void KickPlayer(NetworkedPlayer player)
+        {
+            RemovePlayer(player);
         }
         public NetworkedPlayer getPlayerFromId(int id)
         {
@@ -212,7 +215,7 @@ namespace P5R_MP_SERVER
 
         public void HandlePlayerPacket(IPEndPoint endPoint, Packet packet)
         {
-            if (packet == null || packet.Id == null)
+            if (packet == null || packet.PacketType == null)
                 return;
             if (!IpAddressMap.ContainsKey(endPoint))
                 HandlePlayerConnection(endPoint);
@@ -222,32 +225,32 @@ namespace P5R_MP_SERVER
             NetworkedPlayer player = getPlayerFromId(pId);
             if (player == null)
                 return;
-            if (packet.Id == Packet.P5_PACKET.PACKET_NONE || packet.Id == Packet.P5_PACKET.PACKET_HEARTBEAT)
+            if (packet.PacketType == Packet.P5_PACKET.PACKET_NONE || packet.PacketType == Packet.P5_PACKET.PACKET_HEARTBEAT)
                 return;
 
            
-            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_FIELD)
+            if (packet.PacketType == Packet.P5_PACKET.PACKET_PLAYER_FIELD)
             {
                 player.Field = new int[] { BitConverter.ToInt32(packet.Arguments[1]), BitConverter.ToInt32(packet.Arguments[2]), BitConverter.ToInt32(packet.Arguments[3]) };
                 player.RefreshField = true;
                 Console.WriteLine($"{player.Id}'s field set to {string.Join("_", player.Field)}.");
             }
 
-            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_POSITION)
+            if (packet.PacketType == Packet.P5_PACKET.PACKET_PLAYER_POSITION)
             {
                 player.Position = new float[] { BitConverter.ToSingle(packet.Arguments[1]), BitConverter.ToSingle(packet.Arguments[2]), BitConverter.ToSingle(packet.Arguments[3]) };
                 player.RefreshPosition = true;
                 //Console.WriteLine($"Player position is now {string.Join(",", player.Position)}");
                 return;
             }
-            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_ROTATION)
+            if (packet.PacketType == Packet.P5_PACKET.PACKET_PLAYER_ROTATION)
             {
                 player.Rotation = new float[] { BitConverter.ToSingle(packet.Arguments[1]), BitConverter.ToSingle(packet.Arguments[2]), BitConverter.ToSingle(packet.Arguments[3]) };
                 player.RefreshRotation = true;
                 // Console.WriteLine($"Player rotation is now {string.Join(",", player.Position)}");
                 return;
             }
-            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_MODEL)
+            if (packet.PacketType == Packet.P5_PACKET.PACKET_PLAYER_MODEL)
             {
                 player.Model = BitConverter.ToInt32(packet.Arguments[1]);
                 player.RefreshModel = true;
@@ -255,14 +258,14 @@ namespace P5R_MP_SERVER
                 //Console.WriteLine($"{player.Id}'s model set to {string.Join("_", model)}.");
                 return;
             }
-            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_ANIMATION)
+            if (packet.PacketType == Packet.P5_PACKET.PACKET_PLAYER_ANIMATION)
             {
                 player.Animation = BitConverter.ToInt32(packet.Arguments[1]);
                 player.RefreshAnimation = true;
                 //Console.WriteLine($"{player.Id}'s animation set to {player.Animation}.");
                 return;
             }
-            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_NAME)
+            if (packet.PacketType == Packet.P5_PACKET.PACKET_PLAYER_NAME)
             {
                 int nameLength = BitConverter.ToInt32(packet.Arguments[1]);
                 if (nameLength > MaxNameLength)
@@ -328,6 +331,13 @@ namespace P5R_MP_SERVER
         {
             HandlePlayerConnection(args.Endpoint);
         }
+        Commands commands;
+
+        private void ticktask()
+        {
+            while (true)
+                Tick();
+        }
         public Server(int port = 11000)
         {
             udpServer = new UdpClient(port);
@@ -335,6 +345,8 @@ namespace P5R_MP_SERVER
             packetConnection.OnPacketReceived += HandlePacketReceived;
             packetConnection.OnClientDisconnect += HandleClientDisconnect;
             packetConnection.OnClientConnect += HandleClientConnect;
+            commands = new Commands(this);
+            ticktask();
         }
     }
 }

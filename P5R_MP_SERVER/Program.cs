@@ -52,15 +52,11 @@ public partial class Program
         Console.ForegroundColor = ConsoleColor.Gray;
     }
     private static string GetPublicIPv4Address() => new System.Net.Http.HttpClient().GetStringAsync("http://ifconfig.me").GetAwaiter().GetResult().Replace("\n", "");
+
     public static void Main(string[] args)
     {
         int port = ReadPortArgs(args);
-
-        Server server = new Server(port);
         PrintInfo(port);
-        while (true)
-        {
-            server.Tick();
-        }
+        Server server = new Server(port);
     }
 }

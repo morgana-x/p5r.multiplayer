@@ -88,11 +88,12 @@ namespace p5r.code.multiplayerclient.Components
             running = true;
             IPEndPoint ep = new IPEndPoint(IPAddress.Parse(ipaddress), port); // endpoint where server is listening
             Client.Connect(ep);
-            Client.Send(new byte[] { 0x48, 0x48 }); // Tell server we are not a fraud!
+            //Client.Send(new byte[] { 0x48, 0x48 }); // Tell server we are not a fraud!
             PacketConnectionHandler = new PacketConnection(Client, false, ep);
             PacketConnectionHandler.OnPacketReceived += HandlePacketReceived;
-            Client.Send(Packet.FormatPacket(Packet.P5_PACKET.PACKET_HEARTBEAT, new List<byte[]> { BitConverter.GetBytes(78) }));
-            Client.Send(Packet.FormatPacket(Packet.P5_PACKET.PACKET_HEARTBEAT, new List<byte[]> { BitConverter.GetBytes(78) }));
+
+            SendReliablePacket(Packet.P5_PACKET.PACKET_PLAYER_AUTHENTICATE, new List<byte[]> { new byte[]{ 0x48 } });
+
             // send data
             tickThread = new Thread(TickTask);
             tickThread.IsBackground = true;
@@ -183,7 +184,6 @@ namespace p5r.code.multiplayerclient.Components
  
         private void TickTask()
         {
-            Thread.Sleep(100);
             while (running)
             {
                 Thread.Sleep(10);
@@ -298,13 +298,13 @@ namespace p5r.code.multiplayerclient.Components
         }
         private void HandlePacket(Packet packet)
         {
-            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_ASSIGNID)
+            if (packet.PacketType == Packet.P5_PACKET.PACKET_PLAYER_ASSIGNID)
             {
                 clientPlayerId = BitConverter.ToInt32(packet.Arguments[0]);
                 _logger.WriteLine("Set local id to " + clientPlayerId);
                 return;
             }
-            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_POSITION)
+            if (packet.PacketType == Packet.P5_PACKET.PACKET_PLAYER_POSITION)
             {
                 int id = BitConverter.ToInt32(packet.Arguments[0]);
                 NetworkedPlayer player = getPlayer(id);
@@ -313,7 +313,7 @@ namespace p5r.code.multiplayerclient.Components
                 return;
             }
 
-            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_ROTATION)
+            if (packet.PacketType == Packet.P5_PACKET.PACKET_PLAYER_ROTATION)
             {
                 int id = BitConverter.ToInt32(packet.Arguments[0]);
                 NetworkedPlayer player = getPlayer(id);
@@ -321,20 +321,20 @@ namespace p5r.code.multiplayerclient.Components
                 player.RefreshRotation = true;
                 return;
             }
-            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_CONNECT)
+            if (packet.PacketType == Packet.P5_PACKET.PACKET_PLAYER_CONNECT)
             {
                 int id = BitConverter.ToInt32(packet.Arguments[0]);
                 AddPlayer(id);
                 _logger.WriteLine($"Player {id} conneceted!");
                 return;
             }
-            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_DISCONNECT)
+            if (packet.PacketType == Packet.P5_PACKET.PACKET_PLAYER_DISCONNECT)
             {
                 int id = BitConverter.ToInt32(packet.Arguments[0]);
                 RemovePlayer(id);
                 return;
             }
-            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_MODEL)
+            if (packet.PacketType == Packet.P5_PACKET.PACKET_PLAYER_MODEL)
             {
                 int id = BitConverter.ToInt32(packet.Arguments[0]);
                 int modelId = BitConverter.ToInt32(packet.Arguments[1]);
@@ -345,7 +345,7 @@ namespace p5r.code.multiplayerclient.Components
                 Console.WriteLine($"{player.Name}({id})'s model set to {string.Join("_", model)}.");
                 return;
             }
-            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_FIELD)
+            if (packet.PacketType == Packet.P5_PACKET.PACKET_PLAYER_FIELD)
             {
                 int id = BitConverter.ToInt32(packet.Arguments[0]);
                 int field_major = BitConverter.ToInt32(packet.Arguments[1]);
@@ -360,7 +360,7 @@ namespace p5r.code.multiplayerclient.Components
                 _logger.WriteLine($"{player.Name}({id})'s field set to {string.Join("_", player.Field)}.");
                 return;
             }
-            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_ANIMATION)
+            if (packet.PacketType == Packet.P5_PACKET.PACKET_PLAYER_ANIMATION)
             {
                 int id = BitConverter.ToInt32(packet.Arguments[0]);
                 NetworkedPlayer player = getPlayer(id);
@@ -369,7 +369,7 @@ namespace p5r.code.multiplayerclient.Components
                 player.RefreshAnimation = true;
                 return;
             }
-            if (packet.Id == Packet.P5_PACKET.PACKET_PLAYER_NAME)
+            if (packet.PacketType == Packet.P5_PACKET.PACKET_PLAYER_NAME)
             {
                 int id = BitConverter.ToInt32(packet.Arguments[0]);
                 int nameLength = BitConverter.ToInt32(packet.Arguments[1]);
@@ -390,13 +390,13 @@ namespace p5r.code.multiplayerclient.Components
                 Console.WriteLine("Error parsing packet!");
                 return;
             }
-            if (packet.Id == Packet.P5_PACKET.PACKET_HEARTBEAT)
+            if (packet.PacketType == Packet.P5_PACKET.PACKET_HEARTBEAT)
             {
                 // Heartbeat
                 Client.Send(Packet.FormatPacket(Packet.P5_PACKET.PACKET_HEARTBEAT, new List<byte[]> { BitConverter.GetBytes(78) }));
                 return;
             }
-            if (packet.Id == Packet.P5_PACKET.PACKET_CONFIRM_RECEIVE)
+            if (packet.PacketType == Packet.P5_PACKET.PACKET_CONFIRM_RECEIVE)
             {
                 return;
             }

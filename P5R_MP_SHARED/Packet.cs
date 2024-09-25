@@ -16,12 +16,14 @@ namespace Shared
             PACKET_PLAYER_ANIMATION,
             PACKET_PLAYER_MODEL,
 
+            PACKET_PLAYER_AUTHENTICATE,
             PACKET_PLAYER_ASSIGNID,
             PACKET_PLAYER_CONNECT,
             PACKET_PLAYER_DISCONNECT,
 
             PACKET_PLAYER_MESSAGE,
             PACKET_PLAYER_NAME,
+            
 
             PACKET_REQUEST_PLAYER_DATA,
 
@@ -35,6 +37,8 @@ namespace Shared
             [P5_PACKET.PACKET_HEARTBEAT] = new int[] { 0 },
 
             [P5_PACKET.PACKET_PLAYER_CONNECT] = new int[] { 4 },
+
+            [P5_PACKET.PACKET_PLAYER_AUTHENTICATE] = new int[] { 4 },
 
             [P5_PACKET.PACKET_PLAYER_DISCONNECT] = new int[] { 4 },
 
@@ -58,11 +62,11 @@ namespace Shared
         };
 
         public byte[][] Arguments;
-        public P5_PACKET Id;
+        public P5_PACKET PacketType;
         public short ReliableId;
         public Packet(P5_PACKET id, byte[][] arguments, short reliableId=0)
         {
-            Id = id;
+            PacketType = id;
             Arguments = arguments;
             ReliableId = reliableId;
         }

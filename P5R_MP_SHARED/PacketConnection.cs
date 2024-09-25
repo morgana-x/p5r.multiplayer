@@ -54,10 +54,12 @@ namespace Shared
         }
         public delegate void PacketReceivedHandler(object? sender, PacketReceivedArgs args);
 
-        //List<IPEndPoint> endPoints = new List<IPEndPoint>();
         Dictionary<IPEndPoint, DateTime> endPoints = new Dictionary<IPEndPoint, DateTime>();
 
         public int timeOutLimitMilliseconds = 5000;
+
+        public int packetTimeoutLimitMilliseconds = 3000;
+        public int packetTimeoutLimitIgnoreMilliseconds = 3800;
         public void DisconnectEndpoint(IPEndPoint clientRemoteEP)
         {
             if (endPoints.ContainsKey(clientRemoteEP))
@@ -92,8 +94,8 @@ namespace Shared
 
         private void HandlePacketTrafficServer(int port = 11000)
         {
-            LocalUdpClient.Client.ReceiveTimeout = 90;
-            LocalUdpClient.Client.SendTimeout = 50;
+            LocalUdpClient.Client.ReceiveTimeout = 20;
+            LocalUdpClient.Client.SendTimeout = 15;
             try
             {
                 while (Running)
@@ -107,10 +109,10 @@ namespace Shared
 
                         if (!endPoints.ContainsKey(clientRemoteEP))
                         {
-                            if (data[0] != 72)
-                            {
-                                continue;
-                            }
+                            PacketReceivedArgs args = new PacketReceivedArgs(clientRemoteEP, data);
+                            if (args.Packet.PacketType != Packet.P5_PACKET.PACKET_PLAYER_AUTHENTICATE)
+                                return;
+                            PreProcessPacket(args.Packet, clientRemoteEP);
                             UpdateTimeout(clientRemoteEP);
                             OnClientConnect?.Invoke(this, new ClientConnectArgs(clientRemoteEP));
                         }
@@ -160,11 +162,11 @@ namespace Shared
         }
         private void PreProcessPacketAffirmReliablePackets(Packet packet, IPEndPoint sender = null)
         {
-            if (packet.Id == Packet.P5_PACKET.PACKET_CONFIRM_RECEIVE) // sneaky!
+            if (packet.PacketType == Packet.P5_PACKET.PACKET_CONFIRM_RECEIVE) // sneaky!
                 return;
             if (!packet.IsReliable())
                 return;
-            receivedConfirmedPacketsToIgnore.Add(packet.ReliableId, DateTime.Now.AddMilliseconds(500));
+            receivedConfirmedPacketsToIgnore.Add(packet.ReliableId, DateTime.Now.AddMilliseconds(packetTimeoutLimitIgnoreMilliseconds));
             SendReliablePacketAffirmation(packet, sender);
         }
         private class reliablePacket
@@ -182,9 +184,9 @@ namespace Shared
         short baseId = 1;
         private short getUniqueReliablePacketId()
         {
-            if (baseId >= 599)
+            if (baseId >= 1999)
                 baseId = 1;
-            for (short i = baseId; i < 600; i++)
+            for (short i = baseId; i < 2000; i++)
             {
                 if (!reliablePacketsUnconfirmed.ContainsKey(i))
                 {
@@ -219,11 +221,11 @@ namespace Shared
                 if (DateTime.Now > nextReliablePacketSend)
                 {
                     send = true;
-                    nextReliablePacketSend = DateTime.Now.AddMilliseconds(300);
+                    nextReliablePacketSend = DateTime.Now.AddMilliseconds(15);
                 }
                 foreach (var a in reliablePacketsUnconfirmed)
                 {
-                    if (DateTime.Now.Subtract(a.Value.time).TotalMilliseconds > 3000)
+                    if (DateTime.Now.Subtract(a.Value.time).TotalMilliseconds > packetTimeoutLimitMilliseconds)
                     {
                         Console.WriteLine("Reliable packet timed out " + a.Key);
                         if (!reliablepacketsConfirmedOrTimedOut.Contains(a.Key))
@@ -261,24 +263,23 @@ namespace Shared
                 return;
             }
             PreProcessPacketAffirmReliablePackets(packet, sender);
-            if (packet.Id == Packet.P5_PACKET.PACKET_CONFIRM_RECEIVE)
+            if (packet.PacketType != Packet.P5_PACKET.PACKET_CONFIRM_RECEIVE)
+                return;
+            short packetId = BitConverter.ToInt16(packet.Arguments[0]);
+            if (!reliablePacketsUnconfirmed.ContainsKey(packetId))
+                return;
+            if (IsServer)
             {
-                short packetId = BitConverter.ToInt16(packet.Arguments[0]);
-                if (!reliablePacketsUnconfirmed.ContainsKey(packetId))
-                    return;
-                if (IsServer)
-                {
-                    //reliablePacket playerWhoSent = null;
-                   // reliablePacketsUnconfirmed.TryGetValue(packetId, out playerWhoSent);
+                //reliablePacket playerWhoSent = null;
+                // reliablePacketsUnconfirmed.TryGetValue(packetId, out playerWhoSent);
 
-                    /*Console.WriteLine("Checking stuff...");
-                     *  if (playerWhoSent != null)
-                    if (playerWhoSent.remoteEndPoint != sender)
-                        return;
-                    Console.WriteLine("Checked stuff!");*/
-                }
-                reliablepacketsConfirmedOrTimedOut.Add(packetId);
+                /*Console.WriteLine("Checking stuff...");
+                    *  if (playerWhoSent != null)
+                if (playerWhoSent.remoteEndPoint != sender)
+                    return;
+                Console.WriteLine("Checked stuff!");*/
             }
+            reliablepacketsConfirmedOrTimedOut.Add(packetId);
         }
 
         public void SendReliablePacket(Packet.P5_PACKET type, List<byte[]> args, IPEndPoint recipitent=null)
@@ -293,13 +294,12 @@ namespace Shared
         }
         private void HandlePacketTrafficClient()
         {
-            LocalUdpClient.Client.ReceiveTimeout = 60;
-            LocalUdpClient.Client.SendTimeout = 80;
+            LocalUdpClient.Client.ReceiveTimeout = 20;
+            LocalUdpClient.Client.SendTimeout = 10;
             try
             {
                 while (true)
                 {
-                    //Console.WriteLine("Waiting for data...");
                     checkReliablePacketTimeout();
                     try
                     {

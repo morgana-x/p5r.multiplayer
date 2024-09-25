@@ -86,9 +86,9 @@ namespace p5r.code.multiplayerclient.Components
         {
             Cleanup();
             running = true;
-            IPEndPoint ep = new IPEndPoint(IPAddress.Parse(ipaddress), port); // endpoint where server is listening
+            IPEndPoint ep = new IPEndPoint(IPAddress.Parse(ipaddress), port);
+
             Client.Connect(ep);
-            //Client.Send(new byte[] { 0x48, 0x48 }); // Tell server we are not a fraud!
             PacketConnectionHandler = new PacketConnection(Client, false, ep);
             PacketConnectionHandler.OnPacketReceived += HandlePacketReceived;
 
@@ -107,15 +107,13 @@ namespace p5r.code.multiplayerclient.Components
 
         int lastAnimation = -1;
 
-        List<Packet> packetsQueue = new List<Packet>(); 
+        List<Packet> packetsQueue = new List<Packet>();
         private void Tick()
         {
             SendClientInfoToServer();
             DoPacketQueue();
             if (!_npcManager._p5rLib.FlowCaller.Ready())
                 return;
-            UpdatePlayerPositions();
-          // Console.WriteLine(_npcManager.PC_GET_HANDLE().ToString());
             if (_npcManager.FIELD_CHECK_CHANGE())
             {
                 SendReliablePacket(Packet.P5_PACKET.PACKET_PLAYER_FIELD, new List<byte[]>()
@@ -127,9 +125,10 @@ namespace p5r.code.multiplayerclient.Components
                     });
                 return;
             }
-            if (_npcManager.CurrentField[0] == -1 && _npcManager.CurrentField[1] == -1)
+            if (_npcManager.CurrentField[0] == -1 || _npcManager.CurrentField[1] == -1 || _npcManager.CurrentField[2] == -1)
                 return;
-            int pcHandle = _npcManager.PC_GET_HANDLE();
+            UpdatePlayerPositions();
+            int pcHandle = _npcManager.lastPcHandle; //PC_GET_HANDLE(); // PC_GET_HANDLE() caches result, and is called in FIELD_CHECK_CHANGE so calling this again is unessecary
             if (pcHandle == -1)
                 return;
             int[] newModel = _npcManager.PC_GET_MODEL(pcHandle);
@@ -260,39 +259,43 @@ namespace p5r.code.multiplayerclient.Components
             foreach (var player in PlayerList.Values)
             {
                 bool isInSameField = _npcManager.CurrentField.SequenceEqual(player.Field) && _npcManager.CurrentField[0] != -1 && _npcManager.CurrentField[2] != -1;
+
+                if (player.RefreshField && !isInSameField)
+                {
+                    player.RefreshField = false;
+                    _npcManager.MP_REMOVE_PLAYER(player.Id);
+                    continue;
+                }
+                player.RefreshField = false;
+                if (!isInSameField)
+                {
+                    player.RefreshModel = false;
+                    player.RefreshPosition = false;
+                    player.RefreshRotation = false;
+                    player.RefreshAnimation = false;
+                    continue;
+                }
                 if (player.RefreshModel)
                 {
                     player.RefreshModel = false;
-                    if (isInSameField)
-                    {
-                        int[] model = ModelChecker.GetModelFromId(player.Model);
-                        _npcManager.MP_SYNC_PLAYER_MODEL(player.Id, model[0], model[1], model[2]);
-                    }
-                }
-                if (player.RefreshPosition)
-                {
-                    player.RefreshPosition = false;
-                    if (isInSameField)
-                        _npcManager.MP_SYNC_PLAYER_POS(player.Id, player.Position);
-                }
-                if (player.RefreshRotation)
-                {
-                    player.RefreshRotation = false;
-                    if (isInSameField)
-                       _npcManager.MP_SYNC_PLAYER_ROT(player.Id, player.Rotation);
+                    int[] model = ModelChecker.GetModelFromId(player.Model);
+                    _npcManager.MP_SYNC_PLAYER_MODEL(player.Id, model[0], model[1], model[2]);
+                    continue;
                 }
                 if (player.RefreshAnimation)
                 {
                     player.RefreshAnimation = false;
-                    if (isInSameField)
-                        _npcManager.MP_SYNC_PLAYER_ANIMATION(player.Id, player.Animation);
+                    _npcManager.MP_SYNC_PLAYER_ANIMATION(player.Id, player.Animation);
                 }
-                if (player.RefreshField)
+                if (player.RefreshPosition)
                 {
-                    if (!isInSameField)
-                    {
-                        _npcManager.MP_REMOVE_PLAYER(player.Id);
-                    }
+                    player.RefreshPosition = false;
+                    _npcManager.MP_SYNC_PLAYER_POS(player.Id, player.Position);
+                }
+                if (player.RefreshRotation)
+                {
+                    player.RefreshRotation = false;
+                    _npcManager.MP_SYNC_PLAYER_ROT(player.Id, player.Rotation);
                 }
             }
         }

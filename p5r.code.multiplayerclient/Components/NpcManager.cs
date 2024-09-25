@@ -26,7 +26,7 @@ namespace p5r.code.multiplayerclient.Components
             _logger = logger;
             this.multiplayer = multiplayer;
         }
-        int lastPcHandle = -1;
+        public int lastPcHandle = -1;
 
         private void OnFieldChange()
         {
@@ -139,7 +139,7 @@ namespace p5r.code.multiplayerclient.Components
             if (pcHandle == -1)
                 return new float[3] { 0, 0, 0 };
             if (isLoading())
-                return new float[3] { 0, 0, 0 }; ;
+                return new float[3] { 0, 0, 0 };
             float x = _p5rLib.FlowCaller.FLD_MODEL_GET_X_TRANSLATE(pcHandle);
             float y = _p5rLib.FlowCaller.FLD_MODEL_GET_Y_TRANSLATE(pcHandle);
             float z = _p5rLib.FlowCaller.FLD_MODEL_GET_Z_TRANSLATE(pcHandle);
@@ -171,18 +171,6 @@ namespace p5r.code.multiplayerclient.Components
             return NPC_GET_ANIM(pcHandle);
 
         }
-        public int FLD_GET_BKUP_FIELD_TYPE()
-        {
-            if (isLoading())
-                return -1;
-            return _p5rLib.FlowCaller.FLD_GET_BKUP_FIELD_TYPE();
-        }
-        public int FLD_GET_BATTLE_RESULT()
-        {
-            if (isLoading())
-                return 0;
-            return _p5rLib.FlowCaller.FLD_GET_BATTLE_RESULT();
-        }
         static int[] DefaultModel = new int[3] { 1, 1, 0 };
         public int[] PC_GET_MODEL(int pcHandle)
         {
@@ -192,7 +180,7 @@ namespace p5r.code.multiplayerclient.Components
                 return DefaultModel;
             int modelMajor = _p5rLib.FlowCaller.MDL_GET_MAJOR_ID(pcHandle);
             int modelMinor = _p5rLib.FlowCaller.MDL_GET_MINOR_ID(pcHandle);
-            int modelSub = _p5rLib.FlowCaller.MDL_GET_SUB_ID(pcHandle);
+            int modelSub   = _p5rLib.FlowCaller.MDL_GET_SUB_ID(pcHandle);
 
             return new int[3] { modelMajor, modelMinor, modelSub };
         }
@@ -255,20 +243,6 @@ namespace p5r.code.multiplayerclient.Components
             int anim = _p5rLib.FlowCaller.MDL_GET_ANIM(npcHandle);
             return anim;
         }
-       // int lastFieldHandle = -1;
-
-        /*private bool field_check_reload()
-        {
-            if (!_p5rLib.FlowCaller.Ready())
-                return false;
-            int newFieldHandle = _p5rLib.FlowCaller.FLD_GET_POS_INDEX(); //_p5rLib.FlowCaller.FLD_GET_QR_ID();
-            if (newFieldHandle != lastFieldHandle)
-            {
-                lastFieldHandle = newFieldHandle;
-                OnFieldChange();
-            }
-            return newFieldHandle != lastFieldHandle;
-        }*/
         public bool FIELD_CHECK_CHANGE()
         {
             if (!_p5rLib.FlowCaller.Ready() || PC_GET_HANDLE() == -1)
@@ -280,8 +254,5 @@ namespace p5r.code.multiplayerclient.Components
             CurrentField = newField;
             return true;
         }
-
-     
-  
     }
 }

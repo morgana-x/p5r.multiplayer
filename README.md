@@ -1,7 +1,6 @@
 ## P5R MP
 A mod that adds multiplayer to Persona 5 Royal. Only intends to sync player characters at this stage.
 ## Todo:
-+ Fix player npcs not having Joker's full animation set, resulting in sometimes having an idle animation instead of jump, slide etc
 + Chat
 + Ensure synced animations end nicely by playing their end animation(?)
 + Some form of player verification (Steam perhaps)

@@ -260,8 +260,8 @@ namespace P5R_MP_SERVER
             }
             if (packet.PacketType == Packet.P5_PACKET.PACKET_PLAYER_ANIMATION)
             {
-                player.Animation = BitConverter.ToInt32(packet.Arguments[1]);
-                player.RefreshAnimation = true;
+                //player.Animation = BitConverter.ToInt32(packet.Arguments[1]);
+                // player.RefreshAnimation = true;
                 //Console.WriteLine($"{player.Id}'s animation set to {player.Animation}.");
                 return;
             }

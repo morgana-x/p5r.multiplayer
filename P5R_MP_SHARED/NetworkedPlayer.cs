@@ -11,11 +11,18 @@ namespace Shared
         public float[] Position = new float[3] { 0, 0, 0 };
         public float[] Rotation = new float[3] { 0, 0, 0 };
 
+        public float[] DestPosition = new float[3] {0, 0, 0 };
+        public float[] DestRotation = new float[3] {0, 0, 0 };
+
+        public DateTime LerpFinish;
+        public float[] StartPosition = new float[3] { 0, 0, 0 };
+
         public int[] Field = new int[3] { -1, -1, -1 };
 
         public int Model = 0;
 
         public int Animation = -1;
+        public int LastAnimation = -1;
 
         public bool RefreshPosition;
         public bool RefreshRotation;

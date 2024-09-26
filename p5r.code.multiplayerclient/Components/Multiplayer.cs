@@ -8,6 +8,9 @@ using P5R_MP_SERVER;
 using p5r.code.multiplayerclient.Configuration;
 using System.Text;
 using p5rpc.lib.interfaces;
+using Reloaded.Hooks.Definitions;
+using p5r.code.multiplayerclient.Utility;
+using System.Collections.Generic;
 
 
 namespace p5r.code.multiplayerclient.Components
@@ -31,9 +34,9 @@ namespace p5r.code.multiplayerclient.Components
         Thread tickThread;
 
         public Dictionary<int, NetworkedPlayer> PlayerList = new Dictionary<int,NetworkedPlayer>();
-        public Multiplayer(IP5RLib lib, ILogger logger, Config config)
+        public Multiplayer(IP5RLib lib, ILogger logger, IReloadedHooks hooks, Config config)
         {
-            _npcManager = new NpcManager(lib, logger, this);
+            _npcManager = new NpcManager(lib, logger, hooks, this);
             _logger = logger;
             _config = config;
             Client = new UdpClient();
@@ -144,16 +147,17 @@ namespace p5r.code.multiplayerclient.Components
                     });
                 return;
             }
-            int newAnimation = _npcManager.PC_GET_ANIM(pcHandle);
+            /*int newAnimation = _npcManager.PC_GET_ANIM(pcHandle);
             if (newAnimation != lastAnimation)
             {
                 lastAnimation = newAnimation;
+                Console.WriteLine(newAnimation);
                 Client.SendAsync(Packet.FormatPacket(Packet.P5_PACKET.PACKET_PLAYER_ANIMATION, new List<byte[]>()
                     {
                         BitConverter.GetBytes(clientPlayerId),
                         BitConverter.GetBytes(newAnimation),
                     }));
-            }
+            }*/
             float[] newPos = _npcManager.PC_GET_POS(pcHandle);
             if (!lastPos.SequenceEqual(newPos))
             {
@@ -253,7 +257,40 @@ namespace p5r.code.multiplayerclient.Components
         {
             PacketConnectionHandler.SendReliablePacket(type, args);
         }
+        private void DoLerp(NetworkedPlayer player)
+        {
+            if (player.DestPosition.SequenceEqual(player.Position))
+                return;
+            if (player.StartPosition.SequenceEqual(player.DestPosition))
+                return;
+            if (DateTime.Now > player.LerpFinish)
+            {
+                player.Position = player.DestPosition;
+                player.Animation = 0;
+                player.RefreshAnimation = true;
+                player.RefreshPosition = true;
+                return;
+            }
+            player.Position = VecArray.Lerp(player.StartPosition, player.DestPosition, DateTime.Now.Millisecond / player.LerpFinish.Millisecond);
+            if (VecArray.Dist(player.Position, player.DestPosition) < 20f)
+            {
+                player.Animation = 0;
+                player.RefreshAnimation = true;
+                player.Position = player.DestPosition;
+                player.RefreshPosition = true;
+                return;
+            }
+            if (VecArray.Dist(player.Position, player.DestPosition) < 800f)
+                player.Animation = 2;
+            if (VecArray.Dist(player.Position, player.DestPosition) < 500f)
+                player.Animation = 2;
+            if (VecArray.Dist(player.Position, player.DestPosition) < 250f)
+                player.Animation = 1;
+            if (VecArray.Dist(player.Position, player.DestPosition) < 100f)
+                player.Animation = 1;
+            player.RefreshAnimation = true;
 
+        }
         private void UpdatePlayerPositions()
         {
             foreach (var player in PlayerList.Values)
@@ -282,16 +319,25 @@ namespace p5r.code.multiplayerclient.Components
                     _npcManager.MP_SYNC_PLAYER_MODEL(player.Id, model[0], model[1], model[2]);
                     continue;
                 }
-                if (player.RefreshAnimation)
-                {
-                    player.RefreshAnimation = false;
-                    _npcManager.MP_SYNC_PLAYER_ANIMATION(player.Id, player.Animation);
-                }
                 if (player.RefreshPosition)
                 {
                     player.RefreshPosition = false;
                     _npcManager.MP_SYNC_PLAYER_POS(player.Id, player.Position);
+                    if (!player.DestPosition.SequenceEqual(player.Position))
+                        _npcManager.MP_SYNC_PLAYER_POS_DEST(player.Id, player.DestPosition);
                 }
+                DoLerp(player);
+                if (player.RefreshAnimation)
+                {
+                    player.RefreshAnimation = false;
+                    if (player.LastAnimation == player.Animation)
+                    {
+                        return;
+                    }
+                    player.LastAnimation = player.Animation;
+                    _npcManager.MP_SYNC_PLAYER_ANIMATION(player.Id, player.Animation);
+                }
+  
                 if (player.RefreshRotation)
                 {
                     player.RefreshRotation = false;
@@ -311,7 +357,16 @@ namespace p5r.code.multiplayerclient.Components
             {
                 int id = BitConverter.ToInt32(packet.Arguments[0]);
                 NetworkedPlayer player = getPlayer(id);
-                player.Position = new float[3] { BitConverter.ToSingle(packet.Arguments[1]), BitConverter.ToSingle(packet.Arguments[2]), BitConverter.ToSingle(packet.Arguments[3]) };
+                float[] newpos = new float[3] { BitConverter.ToSingle(packet.Arguments[1]), BitConverter.ToSingle(packet.Arguments[2]), BitConverter.ToSingle(packet.Arguments[3]) };
+                player.Position = player.DestPosition;
+                player.DestPosition = newpos;
+                float dist = VecArray.Dist(player.Position, player.DestPosition);
+                if (dist > 800f)
+                    player.Position = VecArray.Middle(player.Position, player.DestPosition);
+                if (dist > 1200f)
+                    player.Position = player.DestPosition;
+                player.LerpFinish = DateTime.Now.AddMilliseconds((dist + 1) * 75);
+                player.StartPosition = player.Position;
                 player.RefreshPosition = true;
                 return;
             }
@@ -320,7 +375,8 @@ namespace p5r.code.multiplayerclient.Components
             {
                 int id = BitConverter.ToInt32(packet.Arguments[0]);
                 NetworkedPlayer player = getPlayer(id);
-                player.Rotation = new float[3] { BitConverter.ToSingle(packet.Arguments[1]), BitConverter.ToSingle(packet.Arguments[2]), BitConverter.ToSingle(packet.Arguments[3]) };
+                float[] newrot = new float[3] { BitConverter.ToSingle(packet.Arguments[1]), BitConverter.ToSingle(packet.Arguments[2]), BitConverter.ToSingle(packet.Arguments[3]) };
+                player.Rotation = newrot;
                 player.RefreshRotation = true;
                 return;
             }
@@ -365,11 +421,11 @@ namespace p5r.code.multiplayerclient.Components
             }
             if (packet.PacketType == Packet.P5_PACKET.PACKET_PLAYER_ANIMATION)
             {
-                int id = BitConverter.ToInt32(packet.Arguments[0]);
+                /*int id = BitConverter.ToInt32(packet.Arguments[0]);
                 NetworkedPlayer player = getPlayer(id);
                 int animation = BitConverter.ToInt32(packet.Arguments[1]);
                 player.Animation = animation;
-                player.RefreshAnimation = true;
+                player.RefreshAnimation = true;*/
                 return;
             }
             if (packet.PacketType == Packet.P5_PACKET.PACKET_PLAYER_NAME)
@@ -385,22 +441,17 @@ namespace p5r.code.multiplayerclient.Components
                 return;
             }
         }
+
         private void HandlePacketReceived(object sender, PacketReceivedArgs args)
         {
             Packet packet = args.Packet;
             if (packet == null)
-            {
-                Console.WriteLine("Error parsing packet!");
                 return;
-            }
+            if (packet.PacketType == Packet.P5_PACKET.PACKET_CONFIRM_RECEIVE)
+                return;
             if (packet.PacketType == Packet.P5_PACKET.PACKET_HEARTBEAT)
             {
-                // Heartbeat
                 Client.Send(Packet.FormatPacket(Packet.P5_PACKET.PACKET_HEARTBEAT, new List<byte[]> { BitConverter.GetBytes(78) }));
-                return;
-            }
-            if (packet.PacketType == Packet.P5_PACKET.PACKET_CONFIRM_RECEIVE)
-            {
                 return;
             }
             try

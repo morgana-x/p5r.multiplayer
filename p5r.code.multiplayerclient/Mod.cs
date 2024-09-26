@@ -1,6 +1,7 @@
 ﻿using p5r.code.multiplayerclient.Components;
 using p5r.code.multiplayerclient.Configuration;
 using p5r.code.multiplayerclient.Template;
+using p5r.code.multiplayerclient.Utility;
 using p5rpc.lib.interfaces;
 using Reloaded.Hooks.ReloadedII.Interfaces;
 using Reloaded.Mod.Interfaces;
@@ -53,7 +54,7 @@ namespace p5r.code.multiplayerclient
             _owner = context.Owner;
             _configuration = context.Configuration;
             _modConfig = context.ModConfig;
-        
+
             // For more information about this template, please see
             // https://reloaded-project.github.io/Reloaded-II/ModTemplate/
 
@@ -61,6 +62,7 @@ namespace p5r.code.multiplayerclient
             // and some other neat features, override the methods in ModBase.
 
             // TODO: Implement some mod logic
+            Utils.Initialise(_logger, _configuration, _modLoader );
             var p5rLibController = _modLoader.GetController<IP5RLib>();
             if (p5rLibController == null || !p5rLibController.TryGetTarget(out IP5RLib p5rLib))
             {
@@ -69,7 +71,7 @@ namespace p5r.code.multiplayerclient
                 return;
             }
             
-            _multiplayer = new Multiplayer(p5rLib, _logger, _configuration);
+            _multiplayer = new Multiplayer(p5rLib, _logger, _hooks, _configuration);
             _multiplayer.Connect(_configuration.ServerIpAddress, _configuration.ServerPort);
 
             /*IP5RLib _p5rLib = p5rLib;
